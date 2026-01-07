@@ -78,7 +78,7 @@ function createPlayer() {
   };
 }
 
-function createPlatform(x, y, color, rare = false) {
+function createPlatform(x, y, color, rare = false, options = {}) {
   return {
     x,
     y,
@@ -87,7 +87,50 @@ function createPlatform(x, y, color, rare = false) {
     color,
     rare,
     destroyed: false,
+    alpha: options.alpha ?? 1,
+    fade: options.fade ?? null,
+    collidable: options.collidable ?? true,
   };
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function getPlatformGap() {
+  return (
+    CONFIG.platforms.minGap +
+    Math.random() * (CONFIG.platforms.maxGap - CONFIG.platforms.minGap)
+  );
+}
+
+function startPlatformFade(platform, mode) {
+  if (CONFIG.platforms.fadeDuration <= 0) {
+    platform.alpha = mode === "in" ? 1 : 0;
+    platform.fade = null;
+    return;
+  }
+  platform.fade = { mode, elapsed: 0 };
+  if (mode === "in") {
+    platform.alpha = 0;
+  } else {
+    platform.alpha = Math.min(1, platform.alpha ?? 1);
+  }
+}
+
+function createStartPlatform({ fadeIn = false } = {}) {
+  const startGap = getPlatformGap();
+  const groundTop = CONFIG.viewport.virtualHeight - CONFIG.ground.height;
+  const startY = groundTop - startGap;
+  const platform = createPlatform(
+    CONFIG.viewport.virtualWidth / 2 - CONFIG.platforms.width / 2,
+    startY,
+    CONFIG.platforms.colors[0]
+  );
+  if (fadeIn) {
+    startPlatformFade(platform, "in");
+  }
+  return { platform, startY };
 }
 
 function resetGame() {
@@ -100,16 +143,11 @@ function resetGame() {
   state.tailFading = false;
   state.cameraY = 0;
   state.cameraTargetY = 0;
-  state.nextPlatformY = state.player.y - 120;
-  state.lastPlatformY = state.nextPlatformY;
   state.usedRescueAt = -Infinity;
 
-  const startY = CONFIG.viewport.virtualHeight - CONFIG.ground.height - 60;
-  const startPlatform = createPlatform(
-    CONFIG.viewport.virtualWidth / 2 - CONFIG.platforms.width / 2,
-    startY,
-    CONFIG.platforms.colors[0]
-  );
+  const { platform: startPlatform, startY } = createStartPlatform();
+  state.nextPlatformY = startY;
+  state.lastPlatformY = startY;
   state.platforms.push(startPlatform);
 
   for (let i = 0; i < CONFIG.platforms.startCount; i += 1) {
@@ -117,10 +155,8 @@ function resetGame() {
   }
 }
 
-function spawnNextPlatform() {
-  const gap =
-    CONFIG.platforms.minGap +
-    Math.random() * (CONFIG.platforms.maxGap - CONFIG.platforms.minGap);
+function spawnNextPlatform({ fadeIn = false } = {}) {
+  const gap = getPlatformGap();
   state.nextPlatformY -= gap;
   const range = CONFIG.viewport.virtualWidth * CONFIG.platforms.horizontalRange;
   const x =
@@ -132,18 +168,80 @@ function spawnNextPlatform() {
     : CONFIG.platforms.colors[
         Math.floor(Math.random() * CONFIG.platforms.colors.length)
       ];
-  state.platforms.push(createPlatform(x, state.nextPlatformY, color, isRare));
+  const platform = createPlatform(x, state.nextPlatformY, color, isRare);
+  if (fadeIn) {
+    startPlatformFade(platform, "in");
+  }
+  state.platforms.push(platform);
 }
 
-function updatePlatforms() {
+function updatePlatforms(dt) {
   const buffer = CONFIG.viewport.virtualHeight * 1.6;
-  state.platforms = state.platforms.filter(
-    (platform) =>
+  const descentSpeed = CONFIG.platforms.descentSpeed;
+  if (descentSpeed > 0) {
+    state.platforms.forEach((platform) => {
+      platform.y += descentSpeed * dt;
+    });
+    state.nextPlatformY += descentSpeed * dt;
+    state.lastPlatformY += descentSpeed * dt;
+  }
+
+  const groundTop = CONFIG.viewport.virtualHeight - CONFIG.ground.height;
+  const groundVisible =
+    state.cameraY <= groundTop &&
+    state.cameraY + CONFIG.viewport.virtualHeight >= groundTop;
+  const descentCullY = groundVisible
+    ? groundTop + CONFIG.platforms.height * 0.5
+    : state.cameraY + CONFIG.viewport.virtualHeight * 1.5;
+
+  state.platforms.forEach((platform) => {
+    if (!platform.fade) return;
+    const duration = Math.max(CONFIG.platforms.fadeDuration, 0.001);
+    platform.fade.elapsed += dt;
+    const t = Math.min(1, platform.fade.elapsed / duration);
+    const eased = easeOutCubic(t);
+    platform.alpha = platform.fade.mode === "in" ? eased : 1 - eased;
+    if (t >= 1) {
+      if (platform.fade.mode === "out") {
+        platform.alpha = 0;
+      }
+      platform.fade = null;
+    }
+  });
+
+  state.platforms = state.platforms.filter((platform) => {
+    if (platform.alpha <= 0 && !platform.fade) return false;
+    if (platform.y > descentCullY) return false;
+    return (
       platform.y < state.cameraY + buffer &&
       platform.y > state.cameraY - buffer
-  );
+    );
+  });
   while (state.nextPlatformY > state.cameraY - buffer) {
     spawnNextPlatform();
+  }
+}
+
+function respawnPlatforms() {
+  if (!CONFIG.platforms.respawnOnGround) return;
+
+  if (CONFIG.platforms.fadeDuration > 0) {
+    state.platforms.forEach((platform) => {
+      platform.collidable = false;
+      if (platform.fade?.mode !== "out") {
+        startPlatformFade(platform, "out");
+      }
+    });
+  } else {
+    state.platforms = [];
+  }
+
+  const { platform: startPlatform, startY } = createStartPlatform({ fadeIn: true });
+  state.nextPlatformY = startY;
+  state.lastPlatformY = startY;
+  state.platforms.push(startPlatform);
+  for (let i = 0; i < CONFIG.platforms.startCount; i += 1) {
+    spawnNextPlatform({ fadeIn: true });
   }
 }
 
@@ -216,8 +314,14 @@ function initParallax() {
 }
 
 function updateCamera(dt) {
-  const targetY = state.player.y - CONFIG.viewport.virtualHeight * CONFIG.camera.targetScreenY;
-  state.cameraTargetY = Math.min(state.cameraTargetY, targetY);
+  const groundY =
+    CONFIG.viewport.virtualHeight - CONFIG.ground.height - state.player.radius;
+  let targetY =
+    state.player.y - CONFIG.viewport.virtualHeight * CONFIG.camera.targetScreenY;
+  if (state.player.y >= groundY) {
+    targetY = 0;
+  }
+  state.cameraTargetY = Math.max(0, targetY);
   state.cameraY += (state.cameraTargetY - state.cameraY) * CONFIG.camera.smooth;
 }
 
@@ -247,12 +351,13 @@ function updatePlayer(dt) {
       state.audio.play("fall");
       state.running = false;
       overlay.classList.remove("hidden");
+      respawnPlatforms();
     }
   }
 
   if (player.vy > 0) {
     const landing = state.platforms.find((platform) => {
-      if (platform.destroyed) return false;
+      if (platform.destroyed || platform.collidable === false) return false;
       const withinX =
         player.x + player.radius > platform.x &&
         player.x - player.radius < platform.x + platform.width;
@@ -307,16 +412,16 @@ function updateTail(dt) {
 }
 
 function update(dt) {
-  if (!state.running) {
-    updateTail(dt);
-    return;
+  if (state.running) {
+    updatePlayer(dt);
   }
-  updatePlayer(dt);
   updateCamera(dt);
-  updatePlatforms();
+  updatePlatforms(dt);
   updateParticles(dt);
   updateTail(dt);
-  maybeRescuePlatform();
+  if (state.running) {
+    maybeRescuePlatform();
+  }
 }
 
 function renderParallax() {
@@ -343,14 +448,17 @@ function renderParallax() {
 function renderPlatforms() {
   state.platforms.forEach((platform) => {
     if (platform.destroyed) return;
+    if (platform.alpha <= 0) return;
+    ctx.globalAlpha = platform.alpha;
     ctx.fillStyle = platform.color;
     ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+    ctx.globalAlpha = 1;
   });
 }
 
 function renderParticles() {
   state.particles.forEach((p) => {
-    const alpha = Math.max(0, p.life / CONFIG.particles.life);
+    const alpha = easeOutCubic(Math.max(0, p.life / CONFIG.particles.life));
     ctx.fillStyle = `${p.color}${Math.floor(alpha * 255).toString(16).padStart(2, "0")}`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size * p.depth, 0, Math.PI * 2);
@@ -365,7 +473,7 @@ function renderTail() {
   for (let i = 1; i < state.tail.length; i += 1) {
     const a = state.tail[i - 1];
     const b = state.tail[i];
-    const alpha = (i / state.tail.length) * CONFIG.tail.baseAlpha;
+    const alpha = easeOutCubic(i / state.tail.length) * CONFIG.tail.baseAlpha;
     ctx.strokeStyle = `${b.color}${Math.floor(alpha * 255).toString(16).padStart(2, "0")}`;
     ctx.lineWidth = CONFIG.tail.width * (i / state.tail.length);
     ctx.beginPath();

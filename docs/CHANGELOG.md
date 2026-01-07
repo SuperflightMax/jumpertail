@@ -6,6 +6,10 @@ Codex обязан заполнять его по этапам.
 
 ## Journal — Single runnable build (S1–S8 vertical slice)
 
+- Fixed initial platform spacing to match configured gaps and prevent ground overlap.
+- Added configurable platform respawn on ground contact, with quick fade in/out and optional descent speed.
+- Enabled bidirectional camera follow with ground clamp and improved platform spawning above the screen.
+- Smoothed visual fades with eased alpha for platforms, particles, and tail segments.
 - Started with a static, dependency-free browser build to keep deploy simple.
 - Centralized all tuning into `config.js` so physics/platforms/tail/parallax/audio/difficulty are config-first.
 - Implemented a single game loop: player physics, platform spawning, jump collisions, and ground reset.
