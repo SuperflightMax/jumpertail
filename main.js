@@ -321,7 +321,7 @@ function updateCamera(dt) {
   if (state.player.y >= groundY) {
     targetY = 0;
   }
-  state.cameraTargetY = Math.max(0, targetY);
+  state.cameraTargetY = Math.min(0, targetY);
   state.cameraY += (state.cameraTargetY - state.cameraY) * CONFIG.camera.smooth;
 }
 

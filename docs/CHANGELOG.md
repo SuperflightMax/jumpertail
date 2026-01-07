@@ -9,6 +9,7 @@ Codex обязан заполнять его по этапам.
 - Fixed initial platform spacing to match configured gaps and prevent ground overlap.
 - Added configurable platform respawn on ground contact, with quick fade in/out and optional descent speed.
 - Enabled bidirectional camera follow with ground clamp and improved platform spawning above the screen.
+- Clamped camera scrolling so the ground stays locked to the bottom edge.
 - Smoothed visual fades with eased alpha for platforms, particles, and tail segments.
 - Started with a static, dependency-free browser build to keep deploy simple.
 - Centralized all tuning into `config.js` so physics/platforms/tail/parallax/audio/difficulty are config-first.

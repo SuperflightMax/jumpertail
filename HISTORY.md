@@ -5,3 +5,4 @@
   - respawn-on-ground with fades,
   - optional platform descent,
   - bidirectional camera tracking.
+- Clamped camera scrolling to keep the ground anchored at the bottom edge.
