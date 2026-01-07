@@ -1,4 +1,7 @@
 import { CONFIG } from "./config.js";
+import { ParticleSystem } from "./particlesystem.js";
+import { ParticleTailEmitter } from "./particletail.js";
+import { spawnPlatformBurst } from "./particleplatform.js";
 
 const canvas = document.getElementById("game-canvas");
 const overlay = document.getElementById("overlay");
@@ -13,11 +16,9 @@ const state = {
   cameraTargetY: 0,
   player: null,
   platforms: [],
-  particles: [],
-  tail: [],
-  tailMax: CONFIG.tail.maxLength,
   tailColor: CONFIG.platforms.colors[0],
-  tailFading: false,
+  tailEmitter: null,
+  particleSystem: null,
   nextPlatformY: 0,
   lastPlatformY: 0,
   usedRescueAt: -Infinity,
@@ -136,11 +137,9 @@ function createStartPlatform({ fadeIn = false } = {}) {
 function resetGame() {
   state.player = createPlayer();
   state.platforms = [];
-  state.particles = [];
-  state.tail = [];
-  state.tailMax = CONFIG.tail.maxLength;
   state.tailColor = CONFIG.platforms.colors[0];
-  state.tailFading = false;
+  state.tailEmitter.reset();
+  state.particleSystem.clear();
   state.cameraY = 0;
   state.cameraTargetY = 0;
   state.usedRescueAt = -Infinity;
@@ -245,60 +244,8 @@ function respawnPlatforms() {
   }
 }
 
-function addTailPoint(x, y, color) {
-  if (state.tailFading) return;
-  const last = state.tail[state.tail.length - 1];
-  if (last) {
-    const dx = x - last.x;
-    const dy = y - last.y;
-    if (Math.hypot(dx, dy) < CONFIG.tail.segmentSpacing) return;
-  }
-  state.tail.push({ x, y, color, alpha: CONFIG.tail.baseAlpha });
-  if (state.tail.length > state.tailMax) {
-    state.tail.splice(0, state.tail.length - state.tailMax);
-  }
-}
-
-function fadeTail(dt) {
-  const fadeAmount = CONFIG.tail.fadePerSecond * dt;
-  state.tailMax = Math.max(0, state.tailMax - fadeAmount);
-  if (state.tail.length > state.tailMax) {
-    state.tail.splice(0, state.tail.length - Math.floor(state.tailMax));
-  }
-  if (state.tail.length === 0) {
-    state.tailFading = false;
-  }
-}
-
-function spawnParticles(platform) {
-  const count = CONFIG.particles.burstCount;
-  for (let i = 0; i < count; i += 1) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed =
-      CONFIG.particles.minSpeed +
-      Math.random() * (CONFIG.particles.maxSpeed - CONFIG.particles.minSpeed);
-    const depth = Math.random() < CONFIG.particles.farLayerChance ? 0.6 : 1;
-    state.particles.push({
-      x: platform.x + platform.width / 2,
-      y: platform.y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: CONFIG.particles.life,
-      color: platform.color,
-      size: CONFIG.particles.size,
-      depth,
-    });
-  }
-}
-
 function updateParticles(dt) {
-  state.particles.forEach((p) => {
-    p.vy += CONFIG.particles.gravity * dt * p.depth;
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.life -= dt;
-  });
-  state.particles = state.particles.filter((p) => p.life > 0);
+  state.particleSystem.update(dt);
 }
 
 function initParallax() {
@@ -347,7 +294,7 @@ function updatePlayer(dt) {
     player.y = groundY;
     player.vy = 0;
     if (state.running) {
-      state.tailFading = true;
+      state.tailEmitter.reset();
       state.audio.play("fall");
       state.running = false;
       overlay.classList.remove("hidden");
@@ -370,17 +317,17 @@ function updatePlayer(dt) {
     if (landing) {
       player.y = landing.y - player.radius;
       player.vy = -CONFIG.physics.jumpVelocity;
-      state.tailMax += CONFIG.tail.growPerJump;
       state.tailColor = landing.color;
+      state.tailEmitter.boost(CONFIG.particles.tail.growthPerJump);
       state.audio.play("jump");
-      spawnParticles(landing);
+      spawnPlatformBurst(state.particleSystem, CONFIG.particles.platform, landing);
 
       if (CONFIG.platforms.destroyOnJump || CONFIG.difficulty.mode === "hard") {
         landing.destroyed = true;
       }
 
       if (landing.rare) {
-        state.tailMax += CONFIG.tail.growPerJump;
+        state.tailEmitter.boost(CONFIG.particles.tail.growthPerJump);
       }
     }
   }
@@ -405,10 +352,8 @@ function maybeRescuePlatform() {
 }
 
 function updateTail(dt) {
-  addTailPoint(state.player.x, state.player.y, state.tailColor);
-  if (state.tailFading) {
-    fadeTail(dt);
-  }
+  if (!state.running) return;
+  state.tailEmitter.update(dt, state.player, state.tailColor);
 }
 
 function update(dt) {
@@ -457,30 +402,7 @@ function renderPlatforms() {
 }
 
 function renderParticles() {
-  state.particles.forEach((p) => {
-    const alpha = easeOutCubic(Math.max(0, p.life / CONFIG.particles.life));
-    ctx.fillStyle = `${p.color}${Math.floor(alpha * 255).toString(16).padStart(2, "0")}`;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * p.depth, 0, Math.PI * 2);
-    ctx.fill();
-  });
-}
-
-function renderTail() {
-  if (state.tail.length < 2) return;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  for (let i = 1; i < state.tail.length; i += 1) {
-    const a = state.tail[i - 1];
-    const b = state.tail[i];
-    const alpha = easeOutCubic(i / state.tail.length) * CONFIG.tail.baseAlpha;
-    ctx.strokeStyle = `${b.color}${Math.floor(alpha * 255).toString(16).padStart(2, "0")}`;
-    ctx.lineWidth = CONFIG.tail.width * (i / state.tail.length);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-  }
+  state.particleSystem.render(ctx);
 }
 
 function renderPlayer() {
@@ -502,7 +424,6 @@ function render() {
   ctx.fillStyle = CONFIG.viewport.backgroundColor;
   ctx.fillRect(0, state.cameraY, CONFIG.viewport.virtualWidth, CONFIG.viewport.virtualHeight);
   renderParallax();
-  renderTail();
   renderParticles();
   renderPlatforms();
   renderPlayer();
@@ -561,6 +482,8 @@ function setupInput() {
 
 function init() {
   state.audio = new SoundSystem(CONFIG.audio);
+  state.particleSystem = new ParticleSystem({ maxParticles: CONFIG.particles.poolSize });
+  state.tailEmitter = new ParticleTailEmitter(state.particleSystem, CONFIG.particles.tail);
   initParallax();
   resize();
   resetGame();

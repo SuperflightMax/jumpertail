@@ -6,3 +6,4 @@
   - optional platform descent,
   - bidirectional camera tracking.
 - Clamped camera scrolling to keep the ground anchored at the bottom edge.
+- Swapped the tail to a comet-like particle trail and refactored particles into dedicated system/effect modules.

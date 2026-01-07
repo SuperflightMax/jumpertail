@@ -16,6 +16,7 @@ Codex обязан заполнять его по этапам.
 - Implemented a single game loop: player physics, platform spawning, jump collisions, and ground reset.
 - Added tail growth per jump + fade on fall; tied tail color to platform color.
 - Added basic particles on platform jump with depth variance.
+- Replaced the line tail with a comet-style particle trail using a pooled particle system and dedicated effect scripts.
 - Added parallax background layers to introduce vertical depth.
 - Added optional audio system that stays silent if files are missing.
 - Implemented fixed virtual resolution with height-fit scaling and input mapping to virtual coords.
