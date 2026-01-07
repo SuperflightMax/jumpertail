@@ -110,6 +110,16 @@ If changes must be made in other documentation — include them in the same PR a
 
 ---
 
+## Review & PR Policy
+
+- PRs are created per Stage, not per task.
+- Tasks are internal to the Stage and do not require individual review.
+- The human reviews only:
+  - the runnable build
+  - the user-visible outcome of the Stage
+- Internal commits structure is irrelevant.
+---
+
 # Human-Centered Rule
 
 This repository is maintained by a human with a specific style and intent.
@@ -123,3 +133,4 @@ Tone:
 - calm
 - respectful
 - precise
+
