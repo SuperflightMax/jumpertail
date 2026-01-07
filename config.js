@@ -1,0 +1,78 @@
+export const CONFIG = {
+  viewport: {
+    virtualWidth: 1000,
+    virtualHeight: 1778,
+    backgroundColor: "#0b0b14",
+  },
+  input: {
+    horizontalFollow: 0.15,
+    maxPointerDelta: 320,
+  },
+  physics: {
+    gravity: 2200,
+    jumpVelocity: 1100,
+    moveSpeed: 820,
+    maxFallSpeed: 2200,
+  },
+  player: {
+    radius: 22,
+    color: "#ffe66d",
+  },
+  ground: {
+    height: 90,
+    color: "#1b1b2a",
+  },
+  camera: {
+    targetScreenY: 0.62,
+    smooth: 0.1,
+  },
+  platforms: {
+    width: 160,
+    height: 24,
+    horizontalRange: 0.42,
+    minGap: 160,
+    maxGap: 240,
+    startCount: 8,
+    destroyOnJump: true,
+    colors: ["#8fe388", "#87d8ff", "#f6a4ff", "#ffd580"],
+    rareColor: "#ffffff",
+    rareChance: 0.08,
+  },
+  tail: {
+    maxLength: 120,
+    growPerJump: 18,
+    segmentSpacing: 8,
+    fadePerSecond: 90,
+    baseAlpha: 0.7,
+    width: 10,
+  },
+  particles: {
+    burstCount: 26,
+    minSpeed: 120,
+    maxSpeed: 460,
+    life: 1.1,
+    size: 6,
+    gravity: 900,
+    farLayerChance: 0.35,
+  },
+  parallax: {
+    layers: [
+      { speed: 0.15, color: "#151527", dotColor: "#22223d", dotCount: 30 },
+      { speed: 0.3, color: "#10101f", dotColor: "#2a2a4a", dotCount: 40 },
+      { speed: 0.5, color: "#0b0b14", dotColor: "#34345c", dotCount: 50 },
+    ],
+  },
+  difficulty: {
+    mode: "soft",
+    rescuePlatformChance: 0.7,
+    rescueCooldown: 1.5,
+  },
+  audio: {
+    enabled: true,
+    volume: 0.45,
+    background: ["assets/audio/background_1.mp3"],
+    jump: ["assets/audio/jump_1.mp3"],
+    platform: ["assets/audio/platform_1.mp3"],
+    fall: ["assets/audio/fall_1.mp3"],
+  },
+};
