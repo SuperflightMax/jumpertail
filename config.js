@@ -5,17 +5,17 @@ export const CONFIG = {
     backgroundColor: "#0b0b14",
   },
   input: {
-    horizontalFollow: 0.15,
+    horizontalFollow: 0.35,
     maxPointerDelta: 320,
   },
   physics: {
     gravity: 2200,
-    jumpVelocity: 1100,
-    moveSpeed: 820,
-    maxFallSpeed: 2200,
+    jumpVelocity: 1300,
+    moveSpeed: 1200,
+    maxFallSpeed: 3600,
   },
   player: {
-    radius: 22,
+    radius: 32,
     color: "#ffe66d",
   },
   ground: {
@@ -27,11 +27,11 @@ export const CONFIG = {
     smooth: 0.1,
   },
   platforms: {
-    width: 160,
+    width: 100,
     height: 24,
     horizontalRange: 0.42,
-    minGap: 160,
-    maxGap: 240,
+    minGap: 140,
+    maxGap: 200,
     startCount: 8,
     destroyOnJump: true,
     respawnOnGround: true,
@@ -67,7 +67,7 @@ export const CONFIG = {
   },
   difficulty: {
     mode: "soft",
-    rescuePlatformChance: 0.7,
+    rescuePlatformChance: 0.1,
     rescueCooldown: 1.5,
   },
   audio: {
