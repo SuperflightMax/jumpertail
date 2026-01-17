@@ -6,6 +6,7 @@ Codex обязан заполнять его по этапам.
 
 ## Journal — Single runnable build (S1–S8 vertical slice)
 
+- Reordered the debug layout into Game → Layers → Rest columns, moved the performance monitor onto the canvas, and added platform color pickers.
 - Split the Tail Viewer into left/right debug panels with a compact dropdown selector, platform generator block, and mouse-wheel-friendly number inputs, plus added `debug.html` as an editor entrypoint.
 - Expanded the Tail Viewer with full tail controls, editable progress stages, save/load/reset, and FPS/particle monitoring.
 - Added a Tail Viewer progression preview bar that locks tail intensity while the viewer is open.

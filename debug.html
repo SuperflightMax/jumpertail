@@ -8,141 +8,23 @@
   </head>
   <body>
     <div id="game-root" class="game-root--debug">
+      <div class="game-stage">
+        <canvas id="game-canvas"></canvas>
+        <div id="overlay">click to jump</div>
+        <div class="performance-monitor" data-performance-monitor>
+          <div class="performance-monitor__row">
+            <span>FPS</span>
+            <strong data-metric="fps">--</strong>
+          </div>
+          <div class="performance-monitor__row">
+            <span>Particles</span>
+            <strong data-metric="particles">--</strong>
+          </div>
+        </div>
+      </div>
       <div id="tail-viewer" class="tail-viewer">
-        <aside class="tail-viewer__panel tail-viewer__panel--left">
-          <div class="tail-viewer__header">
-            <div>
-              <strong>Tail Viewer</strong>
-              <span class="tail-viewer__hint">V to toggle</span>
-            </div>
-            <div class="tail-viewer__actions">
-              <button type="button" data-action="save">Save</button>
-              <button type="button" data-action="load">Load</button>
-              <button type="button" data-action="reset">Reset</button>
-              <button type="button" data-action="dump">Dump JSON</button>
-            </div>
-          </div>
-          <div class="tail-viewer__section">
-            <div class="tail-viewer__section-header">Layer Select</div>
-            <div class="tail-viewer__field tail-viewer__field--wide">
-              <label>Layer</label>
-              <select data-control="layerSelect"></select>
-            </div>
-          </div>
-          <div class="tail-viewer__section tail-viewer__metrics">
-            <div class="tail-viewer__section-header">
-              <span>Performance</span>
-            </div>
-            <div class="tail-viewer__metrics-row">
-              <span>FPS</span>
-              <strong data-metric="fps">--</strong>
-            </div>
-            <div class="tail-viewer__metrics-row">
-              <span>Particles</span>
-              <strong data-metric="particles">--</strong>
-            </div>
-          </div>
-          <div class="tail-viewer__section">
-            <div class="tail-viewer__section-header">
-              <span>Progression Preview</span>
-              <span class="tail-viewer__stage-label" data-progress-stage></span>
-            </div>
-            <div class="tail-viewer__stage-bar" data-stage-bar></div>
-            <div class="tail-viewer__field">
-              <label>Progress</label>
-              <input type="number" data-control="progress" />
-            </div>
-            <div class="tail-viewer__multipliers" data-progress-multipliers>
-              <span data-mul="spawn"></span>
-              <span data-mul="life"></span>
-              <span data-mul="size"></span>
-            </div>
-          </div>
-          <div class="tail-viewer__section">
-            <div class="tail-viewer__section-header">
-              <span>Global Tail</span>
-            </div>
-            <div class="tail-viewer__field">
-              <label>Snap to Grid</label>
-              <input type="checkbox" data-control="snapToGrid" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Grid Size</label>
-              <input type="number" data-control="gridSize" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Global Alpha</label>
-              <input type="number" data-control="globalAlpha" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Global Spawn</label>
-              <input type="number" data-control="globalSpawnMul" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Global Life</label>
-              <input type="number" data-control="globalLifeMul" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Global Size</label>
-              <input type="number" data-control="globalSizeMul" />
-            </div>
-          </div>
-          <div class="tail-viewer__section">
-            <div class="tail-viewer__section-header">
-              <span>Platform Generator</span>
-            </div>
-            <div class="tail-viewer__field">
-              <label>Width</label>
-              <input type="number" data-control="platformWidth" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Height</label>
-              <input type="number" data-control="platformHeight" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Horizontal Range</label>
-              <input type="number" data-control="platformHorizontalRange" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Min Gap</label>
-              <input type="number" data-control="platformMinGap" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Max Gap</label>
-              <input type="number" data-control="platformMaxGap" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Start Count</label>
-              <input type="number" data-control="platformStartCount" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Destroy on Jump</label>
-              <input type="checkbox" data-control="platformDestroyOnJump" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Respawn on Ground</label>
-              <input type="checkbox" data-control="platformRespawnOnGround" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Fade Duration</label>
-              <input type="number" data-control="platformFadeDuration" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Descent Speed</label>
-              <input type="number" data-control="platformDescentSpeed" />
-            </div>
-          </div>
-        </aside>
-        <aside class="tail-viewer__panel tail-viewer__panel--right" data-layer-controls>
-          <div class="tail-viewer__section">
-            <div class="tail-viewer__section-header">
-              <span>Progress Stages</span>
-              <button type="button" class="tail-viewer__small-button" data-action="add-stage">
-                Add
-              </button>
-            </div>
-            <div class="tail-viewer__stage-list" data-stage-list></div>
-          </div>
+        <aside class="tail-viewer__panel tail-viewer__panel--layers" data-layer-controls>
+          <div class="tail-viewer__layer-buttons" data-layer-buttons></div>
           <div class="tail-viewer__section">
             <div class="tail-viewer__section-header">
               <span>Layer Controls</span>
@@ -249,10 +131,98 @@
             </div>
           </div>
         </aside>
-      </div>
-      <div class="game-stage">
-        <canvas id="game-canvas"></canvas>
-        <div id="overlay">click to jump</div>
+        <aside class="tail-viewer__panel tail-viewer__panel--rest">
+          <div class="tail-viewer__header">
+            <div>
+              <strong>Tail Viewer</strong>
+              <span class="tail-viewer__hint">V to toggle</span>
+            </div>
+            <div class="tail-viewer__actions">
+              <button type="button" data-action="save">Save</button>
+              <button type="button" data-action="load">Load</button>
+              <button type="button" data-action="reset">Reset</button>
+              <button type="button" data-action="dump">Dump JSON</button>
+            </div>
+          </div>
+          <div class="tail-viewer__section">
+            <div class="tail-viewer__section-header">
+              <span>Global Tail</span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Snap to Grid</label>
+              <input type="checkbox" data-control="snapToGrid" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Grid Size</label>
+              <input type="number" data-control="gridSize" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Global Alpha</label>
+              <input type="number" data-control="globalAlpha" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Global Spawn</label>
+              <input type="number" data-control="globalSpawnMul" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Global Life</label>
+              <input type="number" data-control="globalLifeMul" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Global Size</label>
+              <input type="number" data-control="globalSizeMul" />
+            </div>
+          </div>
+          <div class="tail-viewer__section">
+            <div class="tail-viewer__section-header">
+              <span>Platform Generator</span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Width</label>
+              <input type="number" data-control="platformWidth" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Height</label>
+              <input type="number" data-control="platformHeight" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Horizontal Range</label>
+              <input type="number" data-control="platformHorizontalRange" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Min Gap</label>
+              <input type="number" data-control="platformMinGap" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Max Gap</label>
+              <input type="number" data-control="platformMaxGap" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Start Count</label>
+              <input type="number" data-control="platformStartCount" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Destroy on Jump</label>
+              <input type="checkbox" data-control="platformDestroyOnJump" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Respawn on Ground</label>
+              <input type="checkbox" data-control="platformRespawnOnGround" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Fade Duration</label>
+              <input type="number" data-control="platformFadeDuration" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Descent Speed</label>
+              <input type="number" data-control="platformDescentSpeed" />
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--stack">
+              <label>Colors</label>
+              <div class="tail-viewer__platform-colors" data-control="platformColors"></div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
     <script type="module" src="main.js"></script>

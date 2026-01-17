@@ -26,13 +26,15 @@ body {
   justify-content: center;
 }
 
-.game-root--debug {
+#game-root.game-root--debug {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(420px, 1fr) minmax(260px, 320px);
-  grid-template-areas: "left stage right";
+  grid-template-columns: minmax(420px, 1fr) minmax(260px, 320px) minmax(260px, 320px);
+  grid-template-areas: "stage layers rest";
   gap: 12px;
   padding: 12px;
-  align-items: center;
+  align-items: start;
+  height: 100vh;
+  width: 100vw;
 }
 
 .game-stage {
@@ -41,7 +43,7 @@ body {
   align-items: center;
   justify-content: center;
   grid-area: stage;
-  height: 100%;
+  height: calc(100vh - 24px);
   min-height: 0;
 }
 
@@ -82,6 +84,10 @@ body {
   display: none;
 }
 
+.tail-viewer.hidden .performance-monitor {
+  display: none;
+}
+
 .tail-viewer__panel {
   align-self: stretch;
   background: rgba(10, 10, 18, 0.85);
@@ -98,12 +104,12 @@ body {
   overflow: auto;
 }
 
-.tail-viewer__panel--left {
-  grid-area: left;
+.tail-viewer__panel--layers {
+  grid-area: layers;
 }
 
-.tail-viewer__panel--right {
-  grid-area: right;
+.tail-viewer__panel--rest {
+  grid-area: rest;
 }
 
 .tail-viewer__header {
@@ -171,6 +177,33 @@ body {
   color: rgba(255, 255, 255, 0.7);
 }
 
+.performance-monitor {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.performance-monitor.hidden {
+  display: none;
+}
+
+.performance-monitor__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
 .tail-viewer__metrics-row {
   display: flex;
   justify-content: space-between;
@@ -231,6 +264,14 @@ body {
   grid-template-columns: minmax(90px, 1fr) minmax(70px, 120px);
   align-items: center;
   gap: 8px;
+}
+
+.tail-viewer__field--stack {
+  grid-template-columns: 1fr;
+}
+
+.tail-viewer__field--stack label {
+  margin-bottom: 4px;
 }
 
 .tail-viewer__field--wide {
@@ -303,4 +344,26 @@ body {
 
 .tail-viewer__field label {
   color: rgba(255, 255, 255, 0.7);
+}
+
+.tail-viewer__platform-colors {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tail-viewer__platform-color {
+  display: grid;
+  grid-template-columns: 40px minmax(80px, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.tail-viewer__platform-color input[type="color"] {
+  width: 100%;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0;
+  background: transparent;
 }
