@@ -47,8 +47,11 @@ Codex обязан описывать
 
 Функции:
 - список слоёв (enabled + mode/shape),
-- слайдеры для активного слоя: spawn rate, size, life, alpha,
+- расширенные контролы слоя (spawn/max, size/sizeJitter, life/lifeJitter, alpha, follow/aura/spark параметры, цвета),
+- глобальные контролы (snap/grid, global multipliers),
 - preview прогресса с сегментами стадий и блокировкой интенсивности при открытом окне,
-- глобальный slider grid size,
-- `Save` сохраняет текущие настройки в `localStorage`,
+- редактор `progressStages` с добавлением/удалением стадий,
+- монитор FPS + количества живых партиклов,
+- `Save`/`Load` сохраняют и загружают tail config из `localStorage`,
+- `Reset` откатывает на дефолтный конфиг,
 - `Dump JSON` выводит текущий tail config в консоль.

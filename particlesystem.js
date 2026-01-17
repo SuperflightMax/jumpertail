@@ -65,6 +65,14 @@ export class ParticleSystem {
     });
   }
 
+  countAlive() {
+    let alive = 0;
+    this.particles.forEach((particle) => {
+      if (particle.alive) alive += 1;
+    });
+    return alive;
+  }
+
   render(ctx) {
     this.particles.forEach((particle) => {
       if (!particle.alive) return;

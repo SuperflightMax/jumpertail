@@ -11,7 +11,7 @@ Status: implemented, pending acceptance.
 Summary of changes
 - Replaced the single-layer tail emitter with a layered tail system (follow/aura/spark modes) that is fully configurable through `config.js`.
 - Added grid snapping for dot-matrix / pixelized tail rendering and palette-aware color modes.
-- Added an in-game Tail Viewer (toggle with `V`) for live tuning, progression preview/lock, and localStorage save.
+- Added an in-game Tail Viewer (toggle with `V`) for full tail tuning, progression preview/lock, and Save/Load/Reset.
 - Updated documentation (VFX, CHANGELOG, HISTORY) to reflect Tail v2.
 
 How to verify
@@ -22,9 +22,10 @@ How to verify
    - Tail intensity grows per jump and dissolves on fall.
 3. Press `V` to open Tail Viewer:
    - Toggle layers on/off.
-   - Adjust spawn/size/life/alpha/grid size sliders and see changes live.
+   - Adjust global tail settings + layer controls (spawn, size, life, offsets, drift, gravity, color) and see changes live.
    - Use the progression preview to lock tail intensity while the viewer is open.
-   - Click `Save` and reload the page to confirm persistence.
+   - Edit progress stages, click `Save`, then `Load` to confirm persistence. Use `Reset` to restore defaults.
+   - Confirm FPS and particle count display updates.
 
 Notes
 - Tail behavior thresholds and global multipliers are configured in `particles.tail.progressStages`.
