@@ -7,3 +7,6 @@
   - bidirectional camera tracking.
 - Clamped camera scrolling to keep the ground anchored at the bottom edge.
 - Swapped the tail to a comet-like particle trail and refactored particles into dedicated system/effect modules.
+- Implemented Tail v2 layered tail with grid snapping, palette-aware colors, and a live tail viewer for tuning.
+- Added a Tail Viewer progression preview and intensity lock to help debug tail stages.
+- Expanded the Tail Viewer with full tail controls, editable stages, and performance monitoring.

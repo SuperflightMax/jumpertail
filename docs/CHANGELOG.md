@@ -6,6 +6,9 @@ Codex обязан заполнять его по этапам.
 
 ## Journal — Single runnable build (S1–S8 vertical slice)
 
+- Expanded the Tail Viewer with full tail controls, editable progress stages, save/load/reset, and FPS/particle monitoring.
+- Added a Tail Viewer progression preview bar that locks tail intensity while the viewer is open.
+- Added Tail v2 layered tail with grid-snapped particles, per-layer color modes, and an in-game tail viewer for live tuning.
 - Fixed initial platform spacing to match configured gaps and prevent ground overlap.
 - Added configurable platform respawn on ground contact, with quick fade in/out and optional descent speed.
 - Enabled bidirectional camera follow with ground clamp and improved platform spawning above the screen.
