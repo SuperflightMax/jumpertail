@@ -6,6 +6,7 @@ Codex обязан заполнять его по этапам.
 
 ## Journal — Single runnable build (S1–S8 vertical slice)
 
+- Fixed AssetManager audio preload to ignore non-array config keys (prevents startup exception).
 - Reworked particle configs to use min/max ranges, vector speeds, and full transitions (color/alpha/scale/rotation) with texture selection and air drag.
 - Added AssetManager with preload/lazy options, plus external JSON config overrides and selectable config files.
 - Added a pixel overlay pass with configurable grid size and pattern presets, plus viewer controls for all new particle settings.

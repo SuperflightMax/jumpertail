@@ -25,9 +25,11 @@ export class AssetManager {
     const textures = this.getAvailableParticleTextures();
     await Promise.all(textures.map((name) => this.loadParticleTexture(name)));
     if (this.audioConfig) {
-      Object.keys(this.audioConfig).forEach((key) => {
-        this.getAudioPool(key);
-      });
+      Object.keys(this.audioConfig)
+        .filter((key) => Array.isArray(this.audioConfig[key]))
+        .forEach((key) => {
+          this.getAudioPool(key);
+        });
     }
   }
 
@@ -80,7 +82,8 @@ export class AssetManager {
   getAudioPool(key) {
     if (!this.audioConfig) return [];
     if (this.audioPools.has(key)) return this.audioPools.get(key);
-    const urls = this.audioConfig[key] ?? [];
+    const urls = this.audioConfig[key];
+    if (!Array.isArray(urls)) return [];
     const pool = urls.map((url) => {
       const audio = new Audio(url);
       audio.preload = "auto";
