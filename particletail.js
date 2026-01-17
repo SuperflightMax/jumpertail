@@ -67,6 +67,14 @@ export class LayeredParticleTail {
     this.intensity = clamp(this.intensity + amount, 0, 1);
   }
 
+  setIntensity(value) {
+    this.intensity = clamp(value, 0, 1);
+  }
+
+  getIntensity() {
+    return this.intensity;
+  }
+
   update(dt, player, tailColor) {
     const layers = this.config.layers || [];
     if (layers.length === 0) return;

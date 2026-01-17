@@ -48,6 +48,7 @@ Codex обязан описывать
 Функции:
 - список слоёв (enabled + mode/shape),
 - слайдеры для активного слоя: spawn rate, size, life, alpha,
+- preview прогресса с сегментами стадий и блокировкой интенсивности при открытом окне,
 - глобальный slider grid size,
 - `Save` сохраняет текущие настройки в `localStorage`,
 - `Dump JSON` выводит текущий tail config в консоль.

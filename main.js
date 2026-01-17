@@ -354,6 +354,9 @@ function maybeRescuePlatform() {
 
 function updateTail(dt) {
   if (!state.running) return;
+  if (state.tailViewer?.state?.locked) {
+    state.tailEmitter.setIntensity(state.tailViewer.state.lockedProgress);
+  }
   state.tailEmitter.update(dt, state.player, state.tailColor);
 }
 
@@ -519,22 +522,42 @@ function initTailViewer(config, tailEmitter) {
   const controls = panel.querySelector("[data-layer-controls]");
   const saveButton = panel.querySelector("[data-action=\"save\"]");
   const dumpButton = panel.querySelector("[data-action=\"dump\"]");
+  const stageBar = panel.querySelector("[data-stage-bar]");
+  const stageLabel = panel.querySelector("[data-progress-stage]");
+  const progressInput = panel.querySelector("[data-control=\"progress\"]");
   const gridInput = panel.querySelector("[data-control=\"gridSize\"]");
   const spawnInput = panel.querySelector("[data-control=\"spawnRate\"]");
   const sizeInput = panel.querySelector("[data-control=\"size\"]");
   const lifeInput = panel.querySelector("[data-control=\"life\"]");
   const alphaInput = panel.querySelector("[data-control=\"alpha\"]");
 
-  if (!layerList || !controls || !gridInput || !spawnInput || !sizeInput || !lifeInput || !alphaInput) {
+  if (
+    !layerList ||
+    !controls ||
+    !stageBar ||
+    !progressInput ||
+    !gridInput ||
+    !spawnInput ||
+    !sizeInput ||
+    !lifeInput ||
+    !alphaInput
+  ) {
     return null;
   }
 
   const valueLabels = {
+    progress: panel.querySelector("[data-value=\"progress\"]"),
     gridSize: panel.querySelector("[data-value=\"gridSize\"]"),
     spawnRate: panel.querySelector("[data-value=\"spawnRate\"]"),
     size: panel.querySelector("[data-value=\"size\"]"),
     life: panel.querySelector("[data-value=\"life\"]"),
     alpha: panel.querySelector("[data-value=\"alpha\"]"),
+  };
+
+  const multipliers = {
+    spawn: panel.querySelector("[data-mul=\"spawn\"]"),
+    life: panel.querySelector("[data-mul=\"life\"]"),
+    size: panel.querySelector("[data-mul=\"size\"]"),
   };
 
   const saved = localStorage.getItem(storageKey);
@@ -564,6 +587,72 @@ function initTailViewer(config, tailEmitter) {
       return value.toFixed(digits);
     }
     return String(value ?? "");
+  }
+
+  function resolveProgressStage(progress) {
+    const stages = tailConfig.progressStages;
+    if (!Array.isArray(stages) || stages.length === 0) {
+      return null;
+    }
+    return stages.find((stage) => progress >= stage.min && progress <= stage.max) ?? null;
+  }
+
+  function refreshStageBar(progress) {
+    stageBar.innerHTML = "";
+    const stages = tailConfig.progressStages;
+    if (!Array.isArray(stages) || stages.length === 0) return;
+
+    stages.forEach((stage) => {
+      const segment = document.createElement("button");
+      segment.type = "button";
+      segment.className = "tail-viewer__stage-segment";
+      const mid = (stage.min + stage.max) / 2;
+      segment.style.flex = String(Math.max(0.1, stage.max - stage.min));
+      if (progress >= stage.min && progress <= stage.max) {
+        segment.classList.add("is-active");
+      }
+      segment.addEventListener("click", () => {
+        updateProgress(mid);
+      });
+      stageBar.appendChild(segment);
+    });
+  }
+
+  const viewerState = {
+    locked: panel.classList.contains("hidden") ? false : true,
+    lockedProgress: tailEmitter?.getIntensity?.() ?? 0,
+  };
+
+  function updateMultipliers(progress) {
+    const stage = resolveProgressStage(progress);
+    const globalSpawn = tailConfig.globalSpawnMul ?? 1;
+    const globalLife = tailConfig.globalLifeMul ?? 1;
+    const globalSize = tailConfig.globalSizeMul ?? 1;
+    const spawnMul = globalSpawn * (stage?.spawnMul ?? 1);
+    const lifeMul = globalLife * (stage?.lifeMul ?? 1);
+    const sizeMul = globalSize * (stage?.sizeMul ?? 1);
+
+    multipliers.spawn.textContent = `spawn ×${formatValue(spawnMul, 2)}`;
+    multipliers.life.textContent = `life ×${formatValue(lifeMul, 2)}`;
+    multipliers.size.textContent = `size ×${formatValue(sizeMul, 2)}`;
+
+    if (stageLabel) {
+      stageLabel.textContent = stage
+        ? `${formatValue(stage.min, 2)}–${formatValue(stage.max, 2)}`
+        : "no stage";
+    }
+  }
+
+  function updateProgress(progress) {
+    const clamped = Math.max(0, Math.min(1, progress));
+    progressInput.value = String(clamped);
+    valueLabels.progress.textContent = formatValue(clamped, 2);
+    refreshStageBar(clamped);
+    updateMultipliers(clamped);
+    viewerState.lockedProgress = clamped;
+    if (viewerState.locked) {
+      tailEmitter.setIntensity(clamped);
+    }
   }
 
   function refreshControls() {
@@ -597,11 +686,16 @@ function initTailViewer(config, tailEmitter) {
     gridInput.step = "1";
     gridInput.value = String(tailConfig.gridSize ?? 1);
 
+    progressInput.min = "0";
+    progressInput.max = "1";
+    progressInput.step = "0.01";
+
     valueLabels.spawnRate.textContent = formatValue(Number(spawnInput.value), 0);
     valueLabels.size.textContent = formatValue(Number(sizeInput.value), 2);
     valueLabels.life.textContent = formatValue(Number(lifeInput.value), 2);
     valueLabels.alpha.textContent = formatValue(Number(alphaInput.value), 2);
     valueLabels.gridSize.textContent = formatValue(Number(gridInput.value), 0);
+    updateProgress(viewerState.lockedProgress);
   }
 
   function refreshLayerList() {
@@ -678,11 +772,16 @@ function initTailViewer(config, tailEmitter) {
     updateSliderValue(gridInput, valueLabels.gridSize, 0);
   }
 
+  function handleProgressInput() {
+    updateProgress(Number(progressInput.value));
+  }
+
   spawnInput.addEventListener("input", handleSpawnRateInput);
   sizeInput.addEventListener("input", handleSizeInput);
   lifeInput.addEventListener("input", handleLifeInput);
   alphaInput.addEventListener("input", handleAlphaInput);
   gridInput.addEventListener("input", handleGridInput);
+  progressInput.addEventListener("input", handleProgressInput);
 
   saveButton?.addEventListener("click", () => {
     const payload = {
@@ -703,6 +802,13 @@ function initTailViewer(config, tailEmitter) {
 
   function togglePanel() {
     panel.classList.toggle("hidden");
+    viewerState.locked = !panel.classList.contains("hidden");
+    if (viewerState.locked) {
+      viewerState.lockedProgress = tailEmitter?.getIntensity?.() ?? 0;
+      updateProgress(viewerState.lockedProgress);
+    } else if (tailEmitter) {
+      tailEmitter.setIntensity(viewerState.lockedProgress);
+    }
   }
 
   window.addEventListener("keydown", (event) => {
@@ -714,7 +820,7 @@ function initTailViewer(config, tailEmitter) {
 
   refreshLayerList();
   refreshControls();
-  return { panel, tailEmitter };
+  return { panel, tailEmitter, state: viewerState };
 }
 
 function init() {

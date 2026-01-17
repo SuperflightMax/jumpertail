@@ -22,8 +22,28 @@
           </div>
         </div>
         <div class="tail-viewer__body">
-          <div class="tail-viewer__layers" data-layer-list></div>
+          <div class="tail-viewer__layers">
+            <div class="tail-viewer__section-header">Layer Select</div>
+            <div data-layer-list></div>
+          </div>
           <div class="tail-viewer__controls" data-layer-controls>
+            <div class="tail-viewer__section">
+              <div class="tail-viewer__section-header">
+                <span>Progression Preview</span>
+                <span class="tail-viewer__stage-label" data-progress-stage></span>
+              </div>
+              <div class="tail-viewer__stage-bar" data-stage-bar></div>
+              <div class="tail-viewer__field">
+                <label>Progress</label>
+                <input type="range" data-control="progress" />
+                <span data-value="progress"></span>
+              </div>
+              <div class="tail-viewer__multipliers" data-progress-multipliers>
+                <span data-mul="spawn"></span>
+                <span data-mul="life"></span>
+                <span data-mul="size"></span>
+              </div>
+            </div>
             <div class="tail-viewer__field">
               <label>Grid Size</label>
               <input type="range" data-control="gridSize" />
