@@ -6,6 +6,9 @@ Codex обязан заполнять его по этапам.
 
 ## Journal — Single runnable build (S1–S8 vertical slice)
 
+- Reworked particle configs to use min/max ranges, vector speeds, and full transitions (color/alpha/scale/rotation) with texture selection and air drag.
+- Added AssetManager with preload/lazy options, plus external JSON config overrides and selectable config files.
+- Added a pixel overlay pass with configurable grid size and pattern presets, plus viewer controls for all new particle settings.
 - Reordered the debug layout into Game → Layers → Rest columns, moved the performance monitor onto the canvas, and added platform color pickers.
 - Split the Tail Viewer into left/right debug panels with a compact dropdown selector, platform generator block, and mouse-wheel-friendly number inputs, plus added `debug.html` as an editor entrypoint.
 - Expanded the Tail Viewer with full tail controls, editable progress stages, save/load/reset, and FPS/particle monitoring.

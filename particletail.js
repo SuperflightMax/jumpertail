@@ -46,6 +46,25 @@ function snapToGrid(value, gridSize) {
   return Math.round(value / gridSize) * gridSize;
 }
 
+function toRadians(degrees) {
+  return (degrees * Math.PI) / 180;
+}
+
+function normalizeRange(range, fallback) {
+  if (typeof range === "number") {
+    return { min: range, max: range };
+  }
+  const min = Number.isFinite(range?.min) ? range.min : fallback;
+  const max = Number.isFinite(range?.max) ? range.max : min;
+  return { min, max };
+}
+
+function randomRange(range, fallback = 0) {
+  const { min, max } = normalizeRange(range, fallback);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return fallback;
+  return min + Math.random() * (max - min);
+}
+
 export class LayeredParticleTail {
   constructor(system, config) {
     this.system = system;
@@ -144,19 +163,27 @@ export class LayeredParticleTail {
 
   resolveColor(layer, tailColor) {
     const baseColor = tailColor ?? "#ffffff";
+    const fixedFrom = layer.colorFrom ?? layer.color ?? baseColor;
+    const fixedTo = layer.colorTo ?? layer.color ?? baseColor;
     if (layer.colorMode === "fixed") {
-      return layer.color ?? baseColor;
+      return { from: fixedFrom, to: fixedTo };
     }
     if (layer.colorMode === "palette") {
       const palette = Array.isArray(layer.palette) ? layer.palette : [];
-      if (palette.length === 0) return baseColor;
+      if (palette.length === 0) return { from: fixedFrom, to: fixedTo };
       const first = palette[Math.floor(Math.random() * palette.length)];
       const second = palette[Math.floor(Math.random() * palette.length)];
-      const mixedPalette = mixColors(first, second, Math.random());
+      const third = palette[Math.floor(Math.random() * palette.length)];
+      const fourth = palette[Math.floor(Math.random() * palette.length)];
+      const mixedFrom = mixColors(first, second, Math.random());
+      const mixedTo = mixColors(third, fourth, Math.random());
       const blend = clamp(layer.paletteBlend ?? 1, 0, 1);
-      return mixColors(baseColor, mixedPalette, blend);
+      return {
+        from: mixColors(baseColor, mixedFrom, blend),
+        to: mixColors(baseColor, mixedTo, blend),
+      };
     }
-    return baseColor;
+    return { from: baseColor, to: baseColor };
   }
 
   spawnParticle({ layer, player, tailColor, lifeMul, sizeMul, globalAlpha, snap, gridSize }) {
@@ -167,21 +194,21 @@ export class LayeredParticleTail {
     const offsetX = Math.cos(angle) * radius;
     const offsetY = Math.sin(angle) * radius;
 
-    const driftAngle = Math.random() * TAU;
-    const driftSpeed =
-      (layer.driftSpeed ?? 0) + (Math.random() * 2 - 1) * (layer.driftJitter ?? 0);
     const followStrength =
       layer.followStrength ?? (layer.mode === "follow" ? 1 : 0);
 
-    const vx =
-      -player.vx * followStrength + Math.cos(driftAngle) * driftSpeed;
-    const vy =
-      -player.vy * followStrength + Math.sin(driftAngle) * driftSpeed;
+    const speed = layer.speed ?? {};
+    const vx = -player.vx * followStrength + randomRange(speed.vx, 0);
+    const vy = -player.vy * followStrength + randomRange(speed.vy, 0);
 
-    const life =
-      (layer.life ?? 0.5) + (Math.random() * 2 - 1) * (layer.lifeJitter ?? 0);
-    const size =
-      (layer.size ?? 2) + (Math.random() * 2 - 1) * (layer.sizeJitter ?? 0);
+    const life = randomRange(layer.life, 0.5) * lifeMul;
+    const scaleFrom = randomRange(layer.scaleFrom, 2) * sizeMul;
+    const scaleTo = randomRange(layer.scaleTo ?? layer.scaleFrom, scaleFrom) * sizeMul;
+    const alphaFrom = randomRange(layer.alphaFrom, 1) * globalAlpha;
+    const alphaTo = randomRange(layer.alphaTo ?? layer.alphaFrom, alphaFrom) * globalAlpha;
+    const rotationFrom = toRadians(randomRange(layer.rotationFrom, 0));
+    const rotationTo = toRadians(randomRange(layer.rotationTo ?? layer.rotationFrom, 0));
+    const angularSpeed = toRadians(randomRange(layer.angularSpeed, 0));
 
     let x = player.x + offsetX;
     let y = player.y + offsetY;
@@ -190,17 +217,27 @@ export class LayeredParticleTail {
       y = snapToGrid(y, gridSize);
     }
 
+    const colors = this.resolveColor(layer, tailColor);
+
     this.system.spawn({
       x,
       y,
       vx,
       vy,
-      ax: 0,
-      ay: (layer.gravity ?? 0) + (layer.airPush ?? 0),
-      size: Math.max(1, size * sizeMul),
-      life: Math.max(0.1, life * lifeMul),
-      color: this.resolveColor(layer, tailColor),
-      alpha: (layer.alpha ?? 1) * globalAlpha,
+      ax: layer.gravity?.x ?? 0,
+      ay: layer.gravity?.y ?? 0,
+      airDrag: clamp(layer.airDrag ?? 0, 0, 1),
+      life: Math.max(0.1, life),
+      scaleFrom: Math.max(0.1, scaleFrom),
+      scaleTo: Math.max(0.1, scaleTo),
+      alphaFrom: clamp(alphaFrom, 0, 1),
+      alphaTo: clamp(alphaTo, 0, 1),
+      rotationFrom,
+      rotationTo,
+      angularSpeed,
+      colorFrom: colors.from,
+      colorTo: colors.to,
+      texture: layer.texture ?? null,
       shape: layer.shape ?? "square",
     });
   }

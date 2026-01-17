@@ -12,3 +12,4 @@
 - Implemented Tail v2 layered tail with grid snapping, palette-aware colors, and a live tail viewer for tuning.
 - Added a Tail Viewer progression preview and intensity lock to help debug tail stages.
 - Expanded the Tail Viewer with full tail controls, editable stages, and performance monitoring.
+- Reworked particle configs with min/max ranges, vector speeds, transitions, texture selection, and a configurable pixel overlay plus external JSON overrides.

@@ -1,0 +1,7 @@
+{
+  "pixelOverlay": {
+    "enabled": true,
+    "gridSize": 3,
+    "pattern": "_0\n0_"
+  }
+}

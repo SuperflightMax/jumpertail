@@ -53,6 +53,10 @@
               </select>
             </div>
             <div class="tail-viewer__field">
+              <label>Texture</label>
+              <select data-control="texture"></select>
+            </div>
+            <div class="tail-viewer__field">
               <label>Color Mode</label>
               <select data-control="colorMode">
                 <option value="platform">platform</option>
@@ -61,9 +65,14 @@
               </select>
             </div>
             <div class="tail-viewer__field tail-viewer__color-row" data-color-fixed>
-              <label>Color</label>
-              <input type="color" data-control="color" />
-              <input type="text" data-control="colorText" />
+              <label>Color From</label>
+              <input type="color" data-control="colorFrom" />
+              <input type="text" data-control="colorFromText" />
+            </div>
+            <div class="tail-viewer__field tail-viewer__color-row" data-color-fixed>
+              <label>Color To</label>
+              <input type="color" data-control="colorTo" />
+              <input type="text" data-control="colorToText" />
             </div>
             <div class="tail-viewer__field" data-color-palette>
               <label>Palette</label>
@@ -82,24 +91,111 @@
               <input type="number" data-control="maxSpawnRate" />
             </div>
             <div class="tail-viewer__field">
-              <label>Life</label>
-              <input type="number" data-control="life" />
+              <label>Life Min</label>
+              <input type="number" data-control="lifeMin" />
             </div>
             <div class="tail-viewer__field">
-              <label>Life Jitter</label>
-              <input type="number" data-control="lifeJitter" />
+              <label>Life Max</label>
+              <input type="number" data-control="lifeMax" />
             </div>
             <div class="tail-viewer__field">
-              <label>Size</label>
-              <input type="number" data-control="size" />
+              <label>Scale From Min</label>
+              <input type="number" data-control="scaleFromMin" />
             </div>
             <div class="tail-viewer__field">
-              <label>Size Jitter</label>
-              <input type="number" data-control="sizeJitter" />
+              <label>Scale From Max</label>
+              <input type="number" data-control="scaleFromMax" />
             </div>
             <div class="tail-viewer__field">
-              <label>Alpha</label>
-              <input type="number" data-control="alpha" />
+              <label>Scale To Min</label>
+              <input type="number" data-control="scaleToMin" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Scale To Max</label>
+              <input type="number" data-control="scaleToMax" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Alpha From Min</label>
+              <input type="number" data-control="alphaFromMin" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Alpha From Max</label>
+              <input type="number" data-control="alphaFromMax" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Alpha To Min</label>
+              <input type="number" data-control="alphaToMin" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Alpha To Max</label>
+              <input type="number" data-control="alphaToMax" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Rotation From Min</label>
+              <input type="number" data-control="rotationFromMin" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Rotation From Max</label>
+              <input type="number" data-control="rotationFromMax" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Rotation To Min</label>
+              <input type="number" data-control="rotationToMin" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Rotation To Max</label>
+              <input type="number" data-control="rotationToMax" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Angular Speed Min</label>
+              <input type="number" data-control="angularSpeedMin" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Angular Speed Max</label>
+              <input type="number" data-control="angularSpeedMax" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Speed Mode</label>
+              <select data-control="speedMode">
+                <option value="vector">Vx/Vy</option>
+                <option value="direction">Direction/Speed</option>
+              </select>
+            </div>
+            <div class="tail-viewer__speed-mode" data-speed-mode="vector">
+              <div class="tail-viewer__field">
+                <label>Vx Min</label>
+                <input type="number" data-control="speedVxMin" />
+              </div>
+              <div class="tail-viewer__field">
+                <label>Vx Max</label>
+                <input type="number" data-control="speedVxMax" />
+              </div>
+              <div class="tail-viewer__field">
+                <label>Vy Min</label>
+                <input type="number" data-control="speedVyMin" />
+              </div>
+              <div class="tail-viewer__field">
+                <label>Vy Max</label>
+                <input type="number" data-control="speedVyMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__speed-mode" data-speed-mode="direction">
+              <div class="tail-viewer__field">
+                <label>Angle Start</label>
+                <input type="number" data-control="speedAngleStart" />
+              </div>
+              <div class="tail-viewer__field">
+                <label>Angle End</label>
+                <input type="number" data-control="speedAngleEnd" />
+              </div>
+              <div class="tail-viewer__field">
+                <label>Speed Min</label>
+                <input type="number" data-control="speedMin" />
+              </div>
+              <div class="tail-viewer__field">
+                <label>Speed Max</label>
+                <input type="number" data-control="speedMax" />
+              </div>
             </div>
             <div class="tail-viewer__field">
               <label>Follow Strength</label>
@@ -114,20 +210,16 @@
               <input type="number" data-control="offsetBias" />
             </div>
             <div class="tail-viewer__field">
-              <label>Drift Speed</label>
-              <input type="number" data-control="driftSpeed" />
+              <label>Gravity X</label>
+              <input type="number" data-control="gravityX" />
             </div>
             <div class="tail-viewer__field">
-              <label>Drift Jitter</label>
-              <input type="number" data-control="driftJitter" />
+              <label>Gravity Y</label>
+              <input type="number" data-control="gravityY" />
             </div>
             <div class="tail-viewer__field">
-              <label>Gravity</label>
-              <input type="number" data-control="gravity" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Air Push</label>
-              <input type="number" data-control="airPush" />
+              <label>Air Drag</label>
+              <input type="number" data-control="airDrag" />
             </div>
           </div>
         </aside>
@@ -171,6 +263,40 @@
             <div class="tail-viewer__field">
               <label>Global Size</label>
               <input type="number" data-control="globalSizeMul" />
+            </div>
+          </div>
+          <div class="tail-viewer__section">
+            <div class="tail-viewer__section-header">
+              <span>Pixel Overlay</span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Enabled</label>
+              <input type="checkbox" data-control="pixelOverlayEnabled" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Grid Size</label>
+              <input type="number" data-control="pixelOverlayGrid" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Preset</label>
+              <select data-control="pixelOverlayPreset"></select>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--stack">
+              <label>Pattern</label>
+              <textarea data-control="pixelOverlayPattern"></textarea>
+            </div>
+          </div>
+          <div class="tail-viewer__section">
+            <div class="tail-viewer__section-header">
+              <span>Config Files</span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Active Config</label>
+              <select data-control="configSelect"></select>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Reload</label>
+              <button type="button" data-action="configReload">Reload</button>
             </div>
           </div>
           <div class="tail-viewer__section">

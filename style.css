@@ -296,6 +296,25 @@ body {
   justify-self: start;
 }
 
+.tail-viewer__field textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 11px;
+  padding: 6px 8px;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.tail-viewer__speed-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .tail-viewer__color-row {
   grid-template-columns: minmax(90px, 1fr) 60px minmax(90px, 1fr);
 }

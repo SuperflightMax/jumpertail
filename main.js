@@ -2,6 +2,8 @@ import { CONFIG } from "./config.js";
 import { ParticleSystem } from "./particlesystem.js";
 import { LayeredParticleTail } from "./particletail.js";
 import { spawnPlatformBurst } from "./particleplatform.js";
+import { AssetManager } from "./assetmanager.js";
+import { applyConfigOverrides } from "./configloader.js";
 
 const canvas = document.getElementById("game-canvas");
 const overlay = document.getElementById("overlay");
@@ -25,6 +27,16 @@ const state = {
   audio: null,
   parallaxLayers: [],
   tailViewer: null,
+  assetManager: null,
+  configInfo: null,
+  render: {
+    sceneCanvas: null,
+    sceneCtx: null,
+    pixelCanvas: null,
+    pixelCtx: null,
+    overlayCanvas: null,
+    overlayCtx: null,
+  },
   metrics: {
     frames: 0,
     frameTime: 0,
@@ -34,34 +46,35 @@ const state = {
 };
 
 class SoundSystem {
-  constructor(config) {
+  constructor(config, assetManager) {
     this.enabled = config.enabled;
     this.volume = config.volume;
-    this.background = this.createPool(config.background, true);
-    this.sfx = {
-      jump: this.createPool(config.jump),
-      platform: this.createPool(config.platform),
-      fall: this.createPool(config.fall),
-    };
     this.started = false;
+    this.assetManager = assetManager;
+    this.background = assetManager.getAudioPool("background");
+    this.sfx = {
+      jump: assetManager.getAudioPool("jump"),
+      platform: assetManager.getAudioPool("platform"),
+      fall: assetManager.getAudioPool("fall"),
+    };
+    this.configurePool(this.background, { loop: true, volume: this.volume * 0.6 });
+    this.configurePool(this.sfx.jump, { loop: false, volume: this.volume });
+    this.configurePool(this.sfx.platform, { loop: false, volume: this.volume });
+    this.configurePool(this.sfx.fall, { loop: false, volume: this.volume });
   }
 
-  createPool(urls = [], loop = false) {
-    if (!this.enabled || urls.length === 0) return [];
-    return urls.map((url) => {
-      const audio = new Audio(url);
-      audio.preload = "auto";
+  configurePool(pool, { loop, volume }) {
+    pool.forEach((audio) => {
       audio.loop = loop;
-      audio.volume = this.volume;
-      return audio;
+      audio.volume = volume;
     });
   }
 
   start() {
-    if (this.started) return;
+    if (this.started || !this.enabled) return;
     this.started = true;
     this.background.forEach((audio) => {
-      audio.volume = this.volume * 0.6;
+      audio.currentTime = 0;
       audio.play().catch(() => undefined);
     });
   }
@@ -74,6 +87,10 @@ class SoundSystem {
     audio.currentTime = 0;
     audio.play().catch(() => undefined);
   }
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function createPlayer() {
@@ -267,7 +284,7 @@ function initParallax() {
   });
 }
 
-function updateCamera(dt) {
+function updateCamera() {
   const groundY =
     CONFIG.viewport.virtualHeight - CONFIG.ground.height - state.player.radius;
   let targetY =
@@ -385,7 +402,7 @@ function update(dt) {
   if (state.running) {
     updatePlayer(dt);
   }
-  updateCamera(dt);
+  updateCamera();
   updatePlatforms(dt);
   updateParticles(dt);
   updateTail(dt);
@@ -395,10 +412,10 @@ function update(dt) {
   }
 }
 
-function renderParallax() {
+function renderParallax(renderCtx) {
   state.parallaxLayers.forEach((layer) => {
-    ctx.fillStyle = layer.color;
-    ctx.fillRect(
+    renderCtx.fillStyle = layer.color;
+    renderCtx.fillRect(
       0,
       state.cameraY,
       CONFIG.viewport.virtualWidth,
@@ -408,53 +425,94 @@ function renderParallax() {
       const y = ((dot.y + state.cameraY * layer.speed) % (CONFIG.viewport.virtualHeight * 2) +
         CONFIG.viewport.virtualHeight * 2) %
         (CONFIG.viewport.virtualHeight * 2);
-      ctx.fillStyle = `${layer.dotColor}${Math.floor(dot.alpha * 255).toString(16).padStart(2, "0")}`;
-      ctx.beginPath();
-      ctx.arc(dot.x, y, dot.size, 0, Math.PI * 2);
-      ctx.fill();
+      renderCtx.fillStyle = `${layer.dotColor}${Math.floor(dot.alpha * 255).toString(16).padStart(2, "0")}`;
+      renderCtx.beginPath();
+      renderCtx.arc(dot.x, y, dot.size, 0, Math.PI * 2);
+      renderCtx.fill();
     });
   });
 }
 
-function renderPlatforms() {
+function renderPlatforms(renderCtx) {
   state.platforms.forEach((platform) => {
     if (platform.destroyed) return;
     if (platform.alpha <= 0) return;
-    ctx.globalAlpha = platform.alpha;
-    ctx.fillStyle = platform.color;
-    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-    ctx.globalAlpha = 1;
+    renderCtx.globalAlpha = platform.alpha;
+    renderCtx.fillStyle = platform.color;
+    renderCtx.fillRect(platform.x, platform.y, platform.width, platform.height);
+    renderCtx.globalAlpha = 1;
   });
 }
 
-function renderParticles() {
-  state.particleSystem.render(ctx);
+function renderParticles(renderCtx) {
+  state.particleSystem.render(renderCtx);
 }
 
-function renderPlayer() {
-  ctx.fillStyle = CONFIG.player.color;
-  ctx.beginPath();
-  ctx.arc(state.player.x, state.player.y, state.player.radius, 0, Math.PI * 2);
-  ctx.fill();
+function renderPlayer(renderCtx) {
+  renderCtx.fillStyle = CONFIG.player.color;
+  renderCtx.beginPath();
+  renderCtx.arc(state.player.x, state.player.y, state.player.radius, 0, Math.PI * 2);
+  renderCtx.fill();
 }
 
-function renderGround() {
-  ctx.fillStyle = CONFIG.ground.color;
-  ctx.fillRect(0, CONFIG.viewport.virtualHeight - CONFIG.ground.height, CONFIG.viewport.virtualWidth, CONFIG.ground.height);
+function renderGround(renderCtx) {
+  renderCtx.fillStyle = CONFIG.ground.color;
+  renderCtx.fillRect(0, CONFIG.viewport.virtualHeight - CONFIG.ground.height, CONFIG.viewport.virtualWidth, CONFIG.ground.height);
+}
+
+function renderScene() {
+  const renderCtx = state.render.sceneCtx;
+  renderCtx.setTransform(1, 0, 0, 1, 0, 0);
+  renderCtx.clearRect(0, 0, CONFIG.viewport.virtualWidth, CONFIG.viewport.virtualHeight);
+  renderCtx.save();
+  renderCtx.translate(0, -state.cameraY);
+  renderCtx.fillStyle = CONFIG.viewport.backgroundColor;
+  renderCtx.fillRect(0, state.cameraY, CONFIG.viewport.virtualWidth, CONFIG.viewport.virtualHeight);
+  renderParallax(renderCtx);
+  renderParticles(renderCtx);
+  renderPlatforms(renderCtx);
+  renderPlayer(renderCtx);
+  renderGround(renderCtx);
+  renderCtx.restore();
+}
+
+function shouldPixelate() {
+  return CONFIG.pixelOverlay.enabled && CONFIG.pixelOverlay.gridSize > 1;
+}
+
+function renderPixelated() {
+  const { pixelCanvas, pixelCtx, sceneCanvas } = state.render;
+  pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
+  pixelCtx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+  pixelCtx.imageSmoothingEnabled = true;
+  pixelCtx.drawImage(sceneCanvas, 0, 0, pixelCanvas.width, pixelCanvas.height);
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(pixelCanvas, 0, 0, canvas.width, canvas.height);
+}
+
+function renderDirect() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(state.render.sceneCanvas, 0, 0, canvas.width, canvas.height);
+}
+
+function renderPixelOverlayMask() {
+  if (!CONFIG.pixelOverlay.enabled) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(state.render.overlayCanvas, 0, 0);
 }
 
 function render() {
-  ctx.save();
-  ctx.scale(state.scale, state.scale);
-  ctx.translate(0, -state.cameraY);
-  ctx.fillStyle = CONFIG.viewport.backgroundColor;
-  ctx.fillRect(0, state.cameraY, CONFIG.viewport.virtualWidth, CONFIG.viewport.virtualHeight);
-  renderParallax();
-  renderParticles();
-  renderPlatforms();
-  renderPlayer();
-  renderGround();
-  ctx.restore();
+  renderScene();
+  if (shouldPixelate()) {
+    renderPixelated();
+  } else {
+    renderDirect();
+  }
+  renderPixelOverlayMask();
 }
 
 function loop(timestamp) {
@@ -466,6 +524,52 @@ function loop(timestamp) {
   requestAnimationFrame(loop);
 }
 
+function updatePixelCanvas() {
+  const { pixelCanvas } = state.render;
+  const gridSize = clamp(CONFIG.pixelOverlay.gridSize ?? 1, 1, 10);
+  const width = Math.max(1, Math.floor(canvas.width / gridSize));
+  const height = Math.max(1, Math.floor(canvas.height / gridSize));
+  pixelCanvas.width = width;
+  pixelCanvas.height = height;
+}
+
+function parsePattern(pattern) {
+  if (!pattern) return [];
+  return pattern
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+function updatePixelOverlayMask() {
+  const { overlayCanvas, overlayCtx } = state.render;
+  overlayCanvas.width = canvas.width;
+  overlayCanvas.height = canvas.height;
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+  if (!CONFIG.pixelOverlay.enabled) return;
+
+  const gridSize = clamp(CONFIG.pixelOverlay.gridSize ?? 1, 1, 10);
+  const rows = parsePattern(CONFIG.pixelOverlay.pattern);
+  if (rows.length === 0) return;
+  const rowCount = rows.length;
+  const colCount = Math.max(...rows.map((row) => row.length));
+  if (colCount <= 0) return;
+
+  overlayCtx.fillStyle = "#000000";
+  for (let y = 0; y < overlayCanvas.height; y += gridSize) {
+    const rowIndex = Math.floor((y / gridSize) % rowCount);
+    const row = rows[rowIndex];
+    for (let x = 0; x < overlayCanvas.width; x += gridSize) {
+      const colIndex = Math.floor((x / gridSize) % colCount);
+      const cell = row[colIndex % row.length] ?? "0";
+      if (cell === "_") {
+        overlayCtx.fillRect(x, y, gridSize, gridSize);
+      }
+    }
+  }
+}
+
 function resize() {
   const scale = window.innerHeight / CONFIG.viewport.virtualHeight;
   const displayWidth = CONFIG.viewport.virtualWidth * scale;
@@ -474,6 +578,8 @@ function resize() {
   canvas.style.width = `${displayWidth}px`;
   canvas.style.height = `${window.innerHeight}px`;
   state.scale = scale;
+  updatePixelCanvas();
+  updatePixelOverlayMask();
 }
 
 function toVirtualCoords(clientX, clientY) {
@@ -552,6 +658,12 @@ function initTailViewer(config, tailEmitter) {
   const globalSpawnInput = panel.querySelector("[data-control=\"globalSpawnMul\"]");
   const globalLifeInput = panel.querySelector("[data-control=\"globalLifeMul\"]");
   const globalSizeInput = panel.querySelector("[data-control=\"globalSizeMul\"]");
+  const pixelOverlayEnabledInput = panel.querySelector("[data-control=\"pixelOverlayEnabled\"]");
+  const pixelOverlayGridInput = panel.querySelector("[data-control=\"pixelOverlayGrid\"]");
+  const pixelOverlayPresetSelect = panel.querySelector("[data-control=\"pixelOverlayPreset\"]");
+  const pixelOverlayPatternInput = panel.querySelector("[data-control=\"pixelOverlayPattern\"]");
+  const configSelect = panel.querySelector("[data-control=\"configSelect\"]");
+  const configReload = panel.querySelector("[data-action=\"configReload\"]");
   const platformColorsWrap = panel.querySelector("[data-control=\"platformColors\"]");
   const platformWidthInput = panel.querySelector("[data-control=\"platformWidth\"]");
   const platformHeightInput = panel.querySelector("[data-control=\"platformHeight\"]");
@@ -571,29 +683,52 @@ function initTailViewer(config, tailEmitter) {
   const platformDescentInput = panel.querySelector("[data-control=\"platformDescentSpeed\"]");
   const spawnInput = panel.querySelector("[data-control=\"spawnRate\"]");
   const maxSpawnInput = panel.querySelector("[data-control=\"maxSpawnRate\"]");
-  const sizeInput = panel.querySelector("[data-control=\"size\"]");
-  const sizeJitterInput = panel.querySelector("[data-control=\"sizeJitter\"]");
-  const lifeInput = panel.querySelector("[data-control=\"life\"]");
-  const lifeJitterInput = panel.querySelector("[data-control=\"lifeJitter\"]");
-  const alphaInput = panel.querySelector("[data-control=\"alpha\"]");
+  const lifeMinInput = panel.querySelector("[data-control=\"lifeMin\"]");
+  const lifeMaxInput = panel.querySelector("[data-control=\"lifeMax\"]");
+  const scaleFromMinInput = panel.querySelector("[data-control=\"scaleFromMin\"]");
+  const scaleFromMaxInput = panel.querySelector("[data-control=\"scaleFromMax\"]");
+  const scaleToMinInput = panel.querySelector("[data-control=\"scaleToMin\"]");
+  const scaleToMaxInput = panel.querySelector("[data-control=\"scaleToMax\"]");
+  const alphaFromMinInput = panel.querySelector("[data-control=\"alphaFromMin\"]");
+  const alphaFromMaxInput = panel.querySelector("[data-control=\"alphaFromMax\"]");
+  const alphaToMinInput = panel.querySelector("[data-control=\"alphaToMin\"]");
+  const alphaToMaxInput = panel.querySelector("[data-control=\"alphaToMax\"]");
+  const rotationFromMinInput = panel.querySelector("[data-control=\"rotationFromMin\"]");
+  const rotationFromMaxInput = panel.querySelector("[data-control=\"rotationFromMax\"]");
+  const rotationToMinInput = panel.querySelector("[data-control=\"rotationToMin\"]");
+  const rotationToMaxInput = panel.querySelector("[data-control=\"rotationToMax\"]");
+  const angularSpeedMinInput = panel.querySelector("[data-control=\"angularSpeedMin\"]");
+  const angularSpeedMaxInput = panel.querySelector("[data-control=\"angularSpeedMax\"]");
   const enabledInput = panel.querySelector("[data-control=\"layerEnabled\"]");
   const enabledAtInput = panel.querySelector("[data-control=\"enabledAt\"]");
   const modeSelect = panel.querySelector("[data-control=\"mode\"]");
   const shapeSelect = panel.querySelector("[data-control=\"shape\"]");
+  const textureSelect = panel.querySelector("[data-control=\"texture\"]");
   const colorModeSelect = panel.querySelector("[data-control=\"colorMode\"]");
-  const colorInput = panel.querySelector("[data-control=\"color\"]");
-  const colorTextInput = panel.querySelector("[data-control=\"colorText\"]");
+  const colorFromInput = panel.querySelector("[data-control=\"colorFrom\"]");
+  const colorFromTextInput = panel.querySelector("[data-control=\"colorFromText\"]");
+  const colorToInput = panel.querySelector("[data-control=\"colorTo\"]");
+  const colorToTextInput = panel.querySelector("[data-control=\"colorToText\"]");
   const paletteInput = panel.querySelector("[data-control=\"palette\"]");
   const paletteBlendInput = panel.querySelector("[data-control=\"paletteBlend\"]");
+  const speedModeSelect = panel.querySelector("[data-control=\"speedMode\"]");
+  const speedVxMinInput = panel.querySelector("[data-control=\"speedVxMin\"]");
+  const speedVxMaxInput = panel.querySelector("[data-control=\"speedVxMax\"]");
+  const speedVyMinInput = panel.querySelector("[data-control=\"speedVyMin\"]");
+  const speedVyMaxInput = panel.querySelector("[data-control=\"speedVyMax\"]");
+  const speedAngleStartInput = panel.querySelector("[data-control=\"speedAngleStart\"]");
+  const speedAngleEndInput = panel.querySelector("[data-control=\"speedAngleEnd\"]");
+  const speedMinInput = panel.querySelector("[data-control=\"speedMin\"]");
+  const speedMaxInput = panel.querySelector("[data-control=\"speedMax\"]");
   const followStrengthInput = panel.querySelector("[data-control=\"followStrength\"]");
   const offsetRadiusInput = panel.querySelector("[data-control=\"offsetRadius\"]");
   const offsetBiasInput = panel.querySelector("[data-control=\"offsetBias\"]");
-  const driftSpeedInput = panel.querySelector("[data-control=\"driftSpeed\"]");
-  const driftJitterInput = panel.querySelector("[data-control=\"driftJitter\"]");
-  const gravityInput = panel.querySelector("[data-control=\"gravity\"]");
-  const airPushInput = panel.querySelector("[data-control=\"airPush\"]");
-  const fixedColorRow = panel.querySelector("[data-color-fixed]");
+  const gravityXInput = panel.querySelector("[data-control=\"gravityX\"]");
+  const gravityYInput = panel.querySelector("[data-control=\"gravityY\"]");
+  const airDragInput = panel.querySelector("[data-control=\"airDrag\"]");
+  const fixedColorRows = panel.querySelectorAll("[data-color-fixed]");
   const paletteRows = panel.querySelectorAll("[data-color-palette]");
+  const speedModeSections = panel.querySelectorAll("[data-speed-mode]");
   const performanceMonitor = document.querySelector("[data-performance-monitor]");
   const metrics = {
     fps: performanceMonitor?.querySelector("[data-metric=\"fps\"]"),
@@ -612,29 +747,52 @@ function initTailViewer(config, tailEmitter) {
     !platformColorsWrap ||
     !spawnInput ||
     !maxSpawnInput ||
-    !sizeInput ||
-    !sizeJitterInput ||
-    !lifeInput ||
-    !lifeJitterInput ||
-    !alphaInput ||
+    !lifeMinInput ||
+    !lifeMaxInput ||
+    !scaleFromMinInput ||
+    !scaleFromMaxInput ||
+    !scaleToMinInput ||
+    !scaleToMaxInput ||
+    !alphaFromMinInput ||
+    !alphaFromMaxInput ||
+    !alphaToMinInput ||
+    !alphaToMaxInput ||
+    !rotationFromMinInput ||
+    !rotationFromMaxInput ||
+    !rotationToMinInput ||
+    !rotationToMaxInput ||
+    !angularSpeedMinInput ||
+    !angularSpeedMaxInput ||
     !enabledInput ||
     !enabledAtInput ||
     !modeSelect ||
     !shapeSelect ||
+    !textureSelect ||
     !colorModeSelect ||
-    !colorInput ||
-    !colorTextInput ||
+    !colorFromInput ||
+    !colorFromTextInput ||
+    !colorToInput ||
+    !colorToTextInput ||
     !paletteInput ||
     !paletteBlendInput ||
+    !speedModeSelect ||
+    !speedVxMinInput ||
+    !speedVxMaxInput ||
+    !speedVyMinInput ||
+    !speedVyMaxInput ||
+    !speedAngleStartInput ||
+    !speedAngleEndInput ||
+    !speedMinInput ||
+    !speedMaxInput ||
     !followStrengthInput ||
     !offsetRadiusInput ||
     !offsetBiasInput ||
-    !driftSpeedInput ||
-    !driftJitterInput ||
-    !gravityInput ||
-    !airPushInput ||
-    !fixedColorRow ||
+    !gravityXInput ||
+    !gravityYInput ||
+    !airDragInput ||
+    fixedColorRows.length === 0 ||
     paletteRows.length === 0 ||
+    speedModeSections.length === 0 ||
     !metrics.fps ||
     !metrics.particles ||
     !platformWidthInput ||
@@ -646,12 +804,24 @@ function initTailViewer(config, tailEmitter) {
     !platformDestroyInput ||
     !platformRespawnInput ||
     !platformFadeInput ||
-    !platformDescentInput
+    !platformDescentInput ||
+    !pixelOverlayEnabledInput ||
+    !pixelOverlayGridInput ||
+    !pixelOverlayPresetSelect ||
+    !pixelOverlayPatternInput ||
+    !configSelect ||
+    !configReload
   ) {
     return null;
   }
 
   const defaultTailConfig = JSON.parse(JSON.stringify(tailConfig));
+  const viewerState = {
+    locked: panel.classList.contains("hidden") ? false : true,
+    lockedProgress: tailEmitter?.getIntensity?.() ?? 0,
+    speedModes: {},
+    speedAngles: {},
+  };
 
   function applyTailConfig(nextConfig) {
     const viewer = tailConfig.viewer;
@@ -704,13 +874,98 @@ function initTailViewer(config, tailEmitter) {
     if (value !== undefined && value !== null) input.value = String(value);
   }
 
-  const viewerState = {
-    locked: panel.classList.contains("hidden") ? false : true,
-    lockedProgress: tailEmitter?.getIntensity?.() ?? 0,
-  };
+  function ensureRange(range, fallbackMin, fallbackMax) {
+    if (typeof range === "number") {
+      return { min: range, max: range };
+    }
+    if (!range || typeof range !== "object") {
+      return { min: fallbackMin, max: fallbackMax ?? fallbackMin };
+    }
+    return {
+      min: Number.isFinite(range.min) ? range.min : fallbackMin,
+      max: Number.isFinite(range.max) ? range.max : range.min ?? fallbackMin,
+    };
+  }
 
-  if (performanceMonitor) {
-    performanceMonitor.classList.toggle("hidden", panel.classList.contains("hidden"));
+  function setRangeInputs(range, minInput, maxInput, options = {}) {
+    setNumberInput(minInput, { ...options, value: range.min });
+    setNumberInput(maxInput, { ...options, value: range.max });
+  }
+
+  function getSpeedMode(layerIndex) {
+    return viewerState.speedModes[layerIndex] ?? "vector";
+  }
+
+  function setSpeedMode(layerIndex, mode) {
+    viewerState.speedModes[layerIndex] = mode;
+  }
+
+  function normalizeAngle(radians) {
+    const twoPi = Math.PI * 2;
+    return ((radians % twoPi) + twoPi) % twoPi;
+  }
+
+  function angleInRange(angle, start, end) {
+    if (start <= end) {
+      return angle >= start && angle <= end;
+    }
+    return angle >= start || angle <= end;
+  }
+
+  function trigBounds(start, end, fn, criticals) {
+    const points = [start, end, ...criticals];
+    const values = points
+      .filter((point) => angleInRange(point, start, end))
+      .map((point) => fn(point));
+    if (values.length === 0) {
+      values.push(fn(start), fn(end));
+    }
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  }
+
+  function applyDirectionalSpeed(layer) {
+    const angles = viewerState.speedAngles[activeIndex] ?? {
+      start: -30,
+      end: 30,
+      min: 0,
+      max: 0,
+    };
+    const startRad = normalizeAngle((angles.start * Math.PI) / 180);
+    const endRad = normalizeAngle((angles.end * Math.PI) / 180);
+    const speedMin = Math.max(0, angles.min);
+    const speedMax = Math.max(speedMin, angles.max);
+
+    const cosBounds = trigBounds(startRad, endRad, Math.cos, [0, Math.PI]);
+    const sinBounds = trigBounds(startRad, endRad, Math.sin, [Math.PI / 2, (3 * Math.PI) / 2]);
+
+    const vxCandidates = [
+      cosBounds.min * speedMin,
+      cosBounds.min * speedMax,
+      cosBounds.max * speedMin,
+      cosBounds.max * speedMax,
+    ];
+    const vyCandidates = [
+      sinBounds.min * speedMin,
+      sinBounds.min * speedMax,
+      sinBounds.max * speedMin,
+      sinBounds.max * speedMax,
+    ];
+
+    layer.speed = {
+      vx: { min: Math.min(...vxCandidates), max: Math.max(...vxCandidates) },
+      vy: { min: Math.min(...vyCandidates), max: Math.max(...vyCandidates) },
+    };
+  }
+
+  function refreshSpeedMode() {
+    const mode = getSpeedMode(activeIndex);
+    speedModeSelect.value = mode;
+    speedModeSections.forEach((section) => {
+      section.style.display = section.dataset.speedMode === mode ? "flex" : "none";
+    });
   }
 
   function setLockedProgress(progress) {
@@ -721,9 +976,22 @@ function initTailViewer(config, tailEmitter) {
     }
   }
 
+  if (performanceMonitor) {
+    performanceMonitor.classList.toggle("hidden", panel.classList.contains("hidden"));
+  }
+
   function refreshControls() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
+
+    const lifeRange = ensureRange(layer.life, 0.1, 1);
+    const scaleFromRange = ensureRange(layer.scaleFrom, 1, 1);
+    const scaleToRange = ensureRange(layer.scaleTo ?? layer.scaleFrom, scaleFromRange.min, scaleFromRange.max);
+    const alphaFromRange = ensureRange(layer.alphaFrom, 0, 1);
+    const alphaToRange = ensureRange(layer.alphaTo ?? layer.alphaFrom, alphaFromRange.min, alphaFromRange.max);
+    const rotationFromRange = ensureRange(layer.rotationFrom, 0, 0);
+    const rotationToRange = ensureRange(layer.rotationTo ?? layer.rotationFrom, rotationFromRange.min, rotationFromRange.max);
+    const angularSpeedRange = ensureRange(layer.angularSpeed, 0, 0);
 
     setNumberInput(spawnInput, {
       min: 0,
@@ -739,21 +1007,14 @@ function initTailViewer(config, tailEmitter) {
       value: layer.maxSpawnRate ?? 0,
     });
 
-    setNumberInput(sizeInput, { min: 0.5, max: 12, step: 0.1, value: layer.size ?? 1 });
-    setNumberInput(sizeJitterInput, {
-      min: 0,
-      max: 6,
-      step: 0.1,
-      value: layer.sizeJitter ?? 0,
-    });
-    setNumberInput(lifeInput, { min: 0.1, max: 2, step: 0.05, value: layer.life ?? 0.5 });
-    setNumberInput(lifeJitterInput, {
-      min: 0,
-      max: 1.5,
-      step: 0.05,
-      value: layer.lifeJitter ?? 0,
-    });
-    setNumberInput(alphaInput, { min: 0, max: 1, step: 0.01, value: layer.alpha ?? 1 });
+    setRangeInputs(lifeRange, lifeMinInput, lifeMaxInput, { min: 0.1, max: 5, step: 0.05 });
+    setRangeInputs(scaleFromRange, scaleFromMinInput, scaleFromMaxInput, { min: 0.1, max: 20, step: 0.1 });
+    setRangeInputs(scaleToRange, scaleToMinInput, scaleToMaxInput, { min: 0.1, max: 20, step: 0.1 });
+    setRangeInputs(alphaFromRange, alphaFromMinInput, alphaFromMaxInput, { min: 0, max: 1, step: 0.01 });
+    setRangeInputs(alphaToRange, alphaToMinInput, alphaToMaxInput, { min: 0, max: 1, step: 0.01 });
+    setRangeInputs(rotationFromRange, rotationFromMinInput, rotationFromMaxInput, { min: -360, max: 360, step: 1 });
+    setRangeInputs(rotationToRange, rotationToMinInput, rotationToMaxInput, { min: -360, max: 360, step: 1 });
+    setRangeInputs(angularSpeedRange, angularSpeedMinInput, angularSpeedMaxInput, { min: -720, max: 720, step: 1 });
 
     enabledInput.checked = Boolean(layer.enabled);
     setNumberInput(enabledAtInput, {
@@ -766,8 +1027,12 @@ function initTailViewer(config, tailEmitter) {
     modeSelect.value = layer.mode ?? "follow";
     shapeSelect.value = layer.shape ?? "square";
     colorModeSelect.value = layer.colorMode ?? "platform";
-    colorInput.value = layer.color ?? "#ffffff";
-    colorTextInput.value = layer.color ?? "#ffffff";
+    const colorFrom = layer.colorFrom ?? layer.color ?? "#ffffff";
+    const colorTo = layer.colorTo ?? layer.color ?? "#ffffff";
+    colorFromInput.value = colorFrom;
+    colorFromTextInput.value = colorFrom;
+    colorToInput.value = colorTo;
+    colorToTextInput.value = colorTo;
     paletteInput.value = Array.isArray(layer.palette) ? layer.palette.join(", ") : "";
 
     setNumberInput(paletteBlendInput, {
@@ -776,6 +1041,28 @@ function initTailViewer(config, tailEmitter) {
       step: 0.01,
       value: layer.paletteBlend ?? 0,
     });
+
+    const speedRange = layer.speed ?? { vx: { min: 0, max: 0 }, vy: { min: 0, max: 0 } };
+    const vxRange = ensureRange(speedRange.vx, 0, 0);
+    const vyRange = ensureRange(speedRange.vy, 0, 0);
+    setRangeInputs(vxRange, speedVxMinInput, speedVxMaxInput, { min: -500, max: 500, step: 1 });
+    setRangeInputs(vyRange, speedVyMinInput, speedVyMaxInput, { min: -500, max: 500, step: 1 });
+
+    if (!viewerState.speedAngles[activeIndex]) {
+      viewerState.speedAngles[activeIndex] = {
+        start: -30,
+        end: 30,
+        min: 0,
+        max: Math.max(Math.abs(vxRange.min), Math.abs(vxRange.max), Math.abs(vyRange.min), Math.abs(vyRange.max)),
+      };
+    }
+
+    const speedAngles = viewerState.speedAngles[activeIndex];
+    setNumberInput(speedAngleStartInput, { min: -180, max: 180, step: 1, value: speedAngles.start });
+    setNumberInput(speedAngleEndInput, { min: -180, max: 180, step: 1, value: speedAngles.end });
+    setNumberInput(speedMinInput, { min: 0, max: 500, step: 1, value: speedAngles.min });
+    setNumberInput(speedMaxInput, { min: 0, max: 500, step: 1, value: speedAngles.max });
+
     setNumberInput(followStrengthInput, {
       min: 0,
       max: 1.5,
@@ -794,20 +1081,9 @@ function initTailViewer(config, tailEmitter) {
       step: 0.01,
       value: layer.offsetBias ?? 0,
     });
-    setNumberInput(driftSpeedInput, {
-      min: -200,
-      max: 200,
-      step: 1,
-      value: layer.driftSpeed ?? 0,
-    });
-    setNumberInput(driftJitterInput, {
-      min: 0,
-      max: 4,
-      step: 0.1,
-      value: layer.driftJitter ?? 0,
-    });
-    setNumberInput(gravityInput, { min: -200, max: 200, step: 1, value: layer.gravity ?? 0 });
-    setNumberInput(airPushInput, { min: -50, max: 50, step: 0.5, value: layer.airPush ?? 0 });
+    setNumberInput(gravityXInput, { min: -200, max: 200, step: 1, value: layer.gravity?.x ?? 0 });
+    setNumberInput(gravityYInput, { min: -200, max: 200, step: 1, value: layer.gravity?.y ?? 0 });
+    setNumberInput(airDragInput, { min: 0, max: 1, step: 0.01, value: layer.airDrag ?? 0 });
 
     snapToggle.checked = Boolean(tailConfig.snapToGrid);
     setNumberInput(gridInput, { min: 1, max: 8, step: 1, value: tailConfig.gridSize ?? 1 });
@@ -882,14 +1158,23 @@ function initTailViewer(config, tailEmitter) {
     });
     renderPlatformColors();
     updateColorControls();
+    refreshSpeedMode();
+    updateTextureOptions();
+
+    pixelOverlayEnabledInput.checked = Boolean(config.pixelOverlay.enabled);
+    setNumberInput(pixelOverlayGridInput, { min: 1, max: 10, step: 1, value: config.pixelOverlay.gridSize });
+    updatePixelOverlayPresets();
+    pixelOverlayPatternInput.value = config.pixelOverlay.pattern ?? "";
+
+    updateConfigSelect();
     setLockedProgress(viewerState.lockedProgress);
   }
 
   function updateColorControls() {
     const mode = colorModeSelect.value;
-    if (fixedColorRow) {
-      fixedColorRow.style.display = mode === "fixed" ? "grid" : "none";
-    }
+    fixedColorRows.forEach((row) => {
+      row.style.display = mode === "fixed" ? "grid" : "none";
+    });
     paletteRows.forEach((row) => {
       row.style.display = mode === "palette" ? "grid" : "none";
     });
@@ -945,6 +1230,21 @@ function initTailViewer(config, tailEmitter) {
     });
   }
 
+  function updateRangeFromInputs(target, minInput, maxInput) {
+    const minValue = Number(minInput.value);
+    const maxValue = Number(maxInput.value);
+    if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) return;
+    if (minValue > maxValue) {
+      target.min = maxValue;
+      target.max = minValue;
+      minInput.value = String(target.min);
+      maxInput.value = String(target.max);
+      return;
+    }
+    target.min = minValue;
+    target.max = maxValue;
+  }
+
   function handleSpawnRateInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
@@ -957,34 +1257,60 @@ function initTailViewer(config, tailEmitter) {
     layer.maxSpawnRate = Number(maxSpawnInput.value);
   }
 
-  function handleSizeInput() {
+  function handleLifeRangeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.size = Number(sizeInput.value);
+    layer.life = ensureRange(layer.life, 0.1, 1);
+    updateRangeFromInputs(layer.life, lifeMinInput, lifeMaxInput);
   }
 
-  function handleSizeJitterInput() {
+  function handleScaleFromRangeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.sizeJitter = Number(sizeJitterInput.value);
+    layer.scaleFrom = ensureRange(layer.scaleFrom, 1, 1);
+    updateRangeFromInputs(layer.scaleFrom, scaleFromMinInput, scaleFromMaxInput);
   }
 
-  function handleLifeInput() {
+  function handleScaleToRangeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.life = Number(lifeInput.value);
+    layer.scaleTo = ensureRange(layer.scaleTo, 1, 1);
+    updateRangeFromInputs(layer.scaleTo, scaleToMinInput, scaleToMaxInput);
   }
 
-  function handleLifeJitterInput() {
+  function handleAlphaFromRangeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.lifeJitter = Number(lifeJitterInput.value);
+    layer.alphaFrom = ensureRange(layer.alphaFrom, 1, 1);
+    updateRangeFromInputs(layer.alphaFrom, alphaFromMinInput, alphaFromMaxInput);
   }
 
-  function handleAlphaInput() {
+  function handleAlphaToRangeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.alpha = Number(alphaInput.value);
+    layer.alphaTo = ensureRange(layer.alphaTo, 1, 1);
+    updateRangeFromInputs(layer.alphaTo, alphaToMinInput, alphaToMaxInput);
+  }
+
+  function handleRotationFromRangeInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.rotationFrom = ensureRange(layer.rotationFrom, 0, 0);
+    updateRangeFromInputs(layer.rotationFrom, rotationFromMinInput, rotationFromMaxInput);
+  }
+
+  function handleRotationToRangeInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.rotationTo = ensureRange(layer.rotationTo, 0, 0);
+    updateRangeFromInputs(layer.rotationTo, rotationToMinInput, rotationToMaxInput);
+  }
+
+  function handleAngularSpeedRangeInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.angularSpeed = ensureRange(layer.angularSpeed, 0, 0);
+    updateRangeFromInputs(layer.angularSpeed, angularSpeedMinInput, angularSpeedMaxInput);
   }
 
   function handleEnabledInput() {
@@ -1013,6 +1339,13 @@ function initTailViewer(config, tailEmitter) {
     refreshLayerList();
   }
 
+  function handleTextureSelect() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    const value = textureSelect.value;
+    layer.texture = value === "none" ? null : value;
+  }
+
   function handleColorModeSelect() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
@@ -1021,19 +1354,35 @@ function initTailViewer(config, tailEmitter) {
     refreshLayerList();
   }
 
-  function handleColorInput() {
+  function handleColorFromInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.color = colorInput.value;
-    colorTextInput.value = colorInput.value;
+    layer.colorFrom = colorFromInput.value;
+    colorFromTextInput.value = colorFromInput.value;
   }
 
-  function handleColorTextInput() {
+  function handleColorFromTextInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.color = colorTextInput.value;
-    if (colorTextInput.value.startsWith("#")) {
-      colorInput.value = colorTextInput.value;
+    layer.colorFrom = colorFromTextInput.value;
+    if (colorFromTextInput.value.startsWith("#")) {
+      colorFromInput.value = colorFromTextInput.value;
+    }
+  }
+
+  function handleColorToInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.colorTo = colorToInput.value;
+    colorToTextInput.value = colorToInput.value;
+  }
+
+  function handleColorToTextInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.colorTo = colorToTextInput.value;
+    if (colorToTextInput.value.startsWith("#")) {
+      colorToInput.value = colorToTextInput.value;
     }
   }
 
@@ -1050,6 +1399,40 @@ function initTailViewer(config, tailEmitter) {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.paletteBlend = Number(paletteBlendInput.value);
+  }
+
+  function handleSpeedModeSelect() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    setSpeedMode(activeIndex, speedModeSelect.value);
+    if (speedModeSelect.value === "direction") {
+      applyDirectionalSpeed(layer);
+    }
+    refreshSpeedMode();
+  }
+
+  function handleSpeedVectorInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    if (!layer.speed) {
+      layer.speed = { vx: { min: 0, max: 0 }, vy: { min: 0, max: 0 } };
+    }
+    layer.speed.vx = ensureRange(layer.speed.vx, 0, 0);
+    layer.speed.vy = ensureRange(layer.speed.vy, 0, 0);
+    updateRangeFromInputs(layer.speed.vx, speedVxMinInput, speedVxMaxInput);
+    updateRangeFromInputs(layer.speed.vy, speedVyMinInput, speedVyMaxInput);
+  }
+
+  function handleSpeedDirectionInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    viewerState.speedAngles[activeIndex] = {
+      start: Number(speedAngleStartInput.value),
+      end: Number(speedAngleEndInput.value),
+      min: Number(speedMinInput.value),
+      max: Number(speedMaxInput.value),
+    };
+    applyDirectionalSpeed(layer);
   }
 
   function handleFollowStrengthInput() {
@@ -1070,28 +1453,19 @@ function initTailViewer(config, tailEmitter) {
     layer.offsetBias = Number(offsetBiasInput.value);
   }
 
-  function handleDriftSpeedInput() {
-    const layer = tailConfig.layers[activeIndex];
-    if (!layer) return;
-    layer.driftSpeed = Number(driftSpeedInput.value);
-  }
-
-  function handleDriftJitterInput() {
-    const layer = tailConfig.layers[activeIndex];
-    if (!layer) return;
-    layer.driftJitter = Number(driftJitterInput.value);
-  }
-
   function handleGravityInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.gravity = Number(gravityInput.value);
+    layer.gravity = {
+      x: Number(gravityXInput.value),
+      y: Number(gravityYInput.value),
+    };
   }
 
-  function handleAirPushInput() {
+  function handleAirDragInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    layer.airPush = Number(airPushInput.value);
+    layer.airDrag = Number(airDragInput.value);
   }
 
   function handleSnapToggle() {
@@ -1196,6 +1570,86 @@ function initTailViewer(config, tailEmitter) {
     config.platforms.descentSpeed = value;
   }
 
+  function handlePixelOverlayEnabledInput() {
+    config.pixelOverlay.enabled = pixelOverlayEnabledInput.checked;
+    updatePixelCanvas();
+    updatePixelOverlayMask();
+  }
+
+  function handlePixelOverlayGridInput() {
+    const value = Number(pixelOverlayGridInput.value);
+    if (!Number.isFinite(value)) return;
+    config.pixelOverlay.gridSize = clampNumber(value, 1, 10);
+    pixelOverlayGridInput.value = String(config.pixelOverlay.gridSize);
+    updatePixelCanvas();
+    updatePixelOverlayMask();
+  }
+
+  function handlePixelOverlayPresetSelect() {
+    const preset = pixelOverlayPresetSelect.value;
+    if (!preset || preset === "custom") return;
+    config.pixelOverlay.pattern = config.pixelOverlay.presets[preset] ?? config.pixelOverlay.pattern;
+    pixelOverlayPatternInput.value = config.pixelOverlay.pattern;
+    updatePixelOverlayMask();
+  }
+
+  function handlePixelOverlayPatternInput() {
+    config.pixelOverlay.pattern = pixelOverlayPatternInput.value;
+    updatePixelOverlayMask();
+  }
+
+  function updatePixelOverlayPresets() {
+    const presets = config.pixelOverlay.presets ?? {};
+    pixelOverlayPresetSelect.innerHTML = "";
+    const customOption = document.createElement("option");
+    customOption.value = "custom";
+    customOption.textContent = "Custom";
+    pixelOverlayPresetSelect.appendChild(customOption);
+    Object.keys(presets).forEach((key) => {
+      const option = document.createElement("option");
+      option.value = key;
+      option.textContent = key;
+      pixelOverlayPresetSelect.appendChild(option);
+    });
+    pixelOverlayPresetSelect.value = "custom";
+  }
+
+  function updateConfigSelect() {
+    const available = config.configFiles?.available ?? [];
+    const selectedPath = state.configInfo?.selectedPath ?? config.configFiles?.defaultPath;
+    configSelect.innerHTML = "";
+    available.forEach((path) => {
+      const option = document.createElement("option");
+      option.value = path;
+      option.textContent = path;
+      if (path === selectedPath) {
+        option.selected = true;
+      }
+      configSelect.appendChild(option);
+    });
+  }
+
+  function updateTextureOptions() {
+    const textures = state.assetManager?.getAvailableParticleTextures?.() ?? [];
+    textureSelect.innerHTML = "";
+    const noneOption = document.createElement("option");
+    noneOption.value = "none";
+    noneOption.textContent = "none";
+    textureSelect.appendChild(noneOption);
+    textures.forEach((name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      textureSelect.appendChild(option);
+    });
+    textureSelect.value = layerHasTexture() ? tailConfig.layers[activeIndex].texture : "none";
+  }
+
+  function layerHasTexture() {
+    const layer = tailConfig.layers[activeIndex];
+    return layer?.texture && layer.texture !== "none";
+  }
+
   function bindNumberInput(input, handler) {
     input.addEventListener("input", handler);
     input.addEventListener(
@@ -1203,7 +1657,13 @@ function initTailViewer(config, tailEmitter) {
       (event) => {
         if (document.activeElement !== input && !input.matches(":hover")) return;
         event.preventDefault();
-        const step = Number.isFinite(Number(input.step)) ? Number(input.step) : 1;
+        let step = 1;
+        if (event.altKey) {
+          step *= 0.1;
+        }
+        if (event.ctrlKey) {
+          step *= 10;
+        }
         if (step === 0) return;
         const delta = event.deltaY < 0 ? step : -step;
         const current = Number(input.value);
@@ -1224,27 +1684,49 @@ function initTailViewer(config, tailEmitter) {
 
   bindNumberInput(spawnInput, handleSpawnRateInput);
   bindNumberInput(maxSpawnInput, handleMaxSpawnRateInput);
-  bindNumberInput(sizeInput, handleSizeInput);
-  bindNumberInput(sizeJitterInput, handleSizeJitterInput);
-  bindNumberInput(lifeInput, handleLifeInput);
-  bindNumberInput(lifeJitterInput, handleLifeJitterInput);
-  bindNumberInput(alphaInput, handleAlphaInput);
+  bindNumberInput(lifeMinInput, handleLifeRangeInput);
+  bindNumberInput(lifeMaxInput, handleLifeRangeInput);
+  bindNumberInput(scaleFromMinInput, handleScaleFromRangeInput);
+  bindNumberInput(scaleFromMaxInput, handleScaleFromRangeInput);
+  bindNumberInput(scaleToMinInput, handleScaleToRangeInput);
+  bindNumberInput(scaleToMaxInput, handleScaleToRangeInput);
+  bindNumberInput(alphaFromMinInput, handleAlphaFromRangeInput);
+  bindNumberInput(alphaFromMaxInput, handleAlphaFromRangeInput);
+  bindNumberInput(alphaToMinInput, handleAlphaToRangeInput);
+  bindNumberInput(alphaToMaxInput, handleAlphaToRangeInput);
+  bindNumberInput(rotationFromMinInput, handleRotationFromRangeInput);
+  bindNumberInput(rotationFromMaxInput, handleRotationFromRangeInput);
+  bindNumberInput(rotationToMinInput, handleRotationToRangeInput);
+  bindNumberInput(rotationToMaxInput, handleRotationToRangeInput);
+  bindNumberInput(angularSpeedMinInput, handleAngularSpeedRangeInput);
+  bindNumberInput(angularSpeedMaxInput, handleAngularSpeedRangeInput);
   enabledInput.addEventListener("change", handleEnabledInput);
   bindNumberInput(enabledAtInput, handleEnabledAtInput);
   modeSelect.addEventListener("change", handleModeSelect);
   shapeSelect.addEventListener("change", handleShapeSelect);
+  textureSelect.addEventListener("change", handleTextureSelect);
   colorModeSelect.addEventListener("change", handleColorModeSelect);
-  colorInput.addEventListener("input", handleColorInput);
-  colorTextInput.addEventListener("change", handleColorTextInput);
+  colorFromInput.addEventListener("input", handleColorFromInput);
+  colorFromTextInput.addEventListener("change", handleColorFromTextInput);
+  colorToInput.addEventListener("input", handleColorToInput);
+  colorToTextInput.addEventListener("change", handleColorToTextInput);
   paletteInput.addEventListener("change", handlePaletteInput);
   bindNumberInput(paletteBlendInput, handlePaletteBlendInput);
+  speedModeSelect.addEventListener("change", handleSpeedModeSelect);
+  bindNumberInput(speedVxMinInput, handleSpeedVectorInput);
+  bindNumberInput(speedVxMaxInput, handleSpeedVectorInput);
+  bindNumberInput(speedVyMinInput, handleSpeedVectorInput);
+  bindNumberInput(speedVyMaxInput, handleSpeedVectorInput);
+  bindNumberInput(speedAngleStartInput, handleSpeedDirectionInput);
+  bindNumberInput(speedAngleEndInput, handleSpeedDirectionInput);
+  bindNumberInput(speedMinInput, handleSpeedDirectionInput);
+  bindNumberInput(speedMaxInput, handleSpeedDirectionInput);
   bindNumberInput(followStrengthInput, handleFollowStrengthInput);
   bindNumberInput(offsetRadiusInput, handleOffsetRadiusInput);
   bindNumberInput(offsetBiasInput, handleOffsetBiasInput);
-  bindNumberInput(driftSpeedInput, handleDriftSpeedInput);
-  bindNumberInput(driftJitterInput, handleDriftJitterInput);
-  bindNumberInput(gravityInput, handleGravityInput);
-  bindNumberInput(airPushInput, handleAirPushInput);
+  bindNumberInput(gravityXInput, handleGravityInput);
+  bindNumberInput(gravityYInput, handleGravityInput);
+  bindNumberInput(airDragInput, handleAirDragInput);
   snapToggle.addEventListener("change", handleSnapToggle);
   bindNumberInput(gridInput, handleGridInput);
   bindNumberInput(globalAlphaInput, handleGlobalAlphaInput);
@@ -1261,6 +1743,21 @@ function initTailViewer(config, tailEmitter) {
   platformRespawnInput.addEventListener("change", handlePlatformRespawnInput);
   bindNumberInput(platformFadeInput, handlePlatformFadeInput);
   bindNumberInput(platformDescentInput, handlePlatformDescentInput);
+  pixelOverlayEnabledInput.addEventListener("change", handlePixelOverlayEnabledInput);
+  bindNumberInput(pixelOverlayGridInput, handlePixelOverlayGridInput);
+  pixelOverlayPresetSelect.addEventListener("change", handlePixelOverlayPresetSelect);
+  pixelOverlayPatternInput.addEventListener("input", handlePixelOverlayPatternInput);
+
+  configSelect.addEventListener("change", () => {
+    const selected = configSelect.value;
+    if (!selected) return;
+    localStorage.setItem(config.configFiles.storageKey ?? "selectedConfigPath", selected);
+    window.location.reload();
+  });
+
+  configReload.addEventListener("click", () => {
+    window.location.reload();
+  });
 
   saveButton?.addEventListener("click", () => {
     localStorage.setItem(storageKey, JSON.stringify(tailConfig));
@@ -1301,7 +1798,7 @@ function initTailViewer(config, tailEmitter) {
   window.addEventListener("keydown", (event) => {
     if (event.key.toLowerCase() !== "v") return;
     const tag = event.target?.tagName?.toLowerCase();
-    if (tag === "input" || tag === "textarea") return;
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
     togglePanel();
   });
 
@@ -1310,11 +1807,37 @@ function initTailViewer(config, tailEmitter) {
   return { panel, tailEmitter, state: viewerState, metrics };
 }
 
+function initRenderSurfaces() {
+  const sceneCanvas = document.createElement("canvas");
+  sceneCanvas.width = CONFIG.viewport.virtualWidth;
+  sceneCanvas.height = CONFIG.viewport.virtualHeight;
+  const sceneCtx = sceneCanvas.getContext("2d");
+
+  const pixelCanvas = document.createElement("canvas");
+  const pixelCtx = pixelCanvas.getContext("2d");
+
+  const overlayCanvas = document.createElement("canvas");
+  const overlayCtx = overlayCanvas.getContext("2d");
+
+  state.render = {
+    sceneCanvas,
+    sceneCtx,
+    pixelCanvas,
+    pixelCtx,
+    overlayCanvas,
+    overlayCtx,
+  };
+}
+
 function init() {
-  state.audio = new SoundSystem(CONFIG.audio);
-  state.particleSystem = new ParticleSystem({ maxParticles: CONFIG.particles.poolSize });
+  state.audio = new SoundSystem(CONFIG.audio, state.assetManager);
+  state.particleSystem = new ParticleSystem({
+    maxParticles: CONFIG.particles.poolSize,
+    assetManager: state.assetManager,
+  });
   state.tailEmitter = new LayeredParticleTail(state.particleSystem, CONFIG.particles.tail);
   initParallax();
+  initRenderSurfaces();
   state.tailViewer = initTailViewer(CONFIG, state.tailEmitter);
   resize();
   resetGame();
@@ -1323,4 +1846,13 @@ function init() {
   requestAnimationFrame(loop);
 }
 
-init();
+async function boot() {
+  state.configInfo = await applyConfigOverrides(CONFIG, CONFIG.configFiles);
+  state.assetManager = new AssetManager({ ...CONFIG.assets, audio: CONFIG.audio });
+  if (CONFIG.assets.preload) {
+    await state.assetManager.preloadAll();
+  }
+  init();
+}
+
+boot();
