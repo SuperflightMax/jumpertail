@@ -540,23 +540,35 @@ function initTailViewer(config, tailEmitter) {
   if (!panel) return null;
 
   const storageKey = viewerConfig.storageKey ?? "tailViewerConfig";
-  const layerList = panel.querySelector("[data-layer-list]");
+  const layerButtons = panel.querySelector("[data-layer-buttons]");
   const controls = panel.querySelector("[data-layer-controls]");
   const saveButton = panel.querySelector("[data-action=\"save\"]");
   const loadButton = panel.querySelector("[data-action=\"load\"]");
   const resetButton = panel.querySelector("[data-action=\"reset\"]");
   const dumpButton = panel.querySelector("[data-action=\"dump\"]");
-  const stageBar = panel.querySelector("[data-stage-bar]");
-  const stageLabel = panel.querySelector("[data-progress-stage]");
-  const stageList = panel.querySelector("[data-stage-list]");
-  const addStageButton = panel.querySelector("[data-action=\"add-stage\"]");
-  const progressInput = panel.querySelector("[data-control=\"progress\"]");
   const snapToggle = panel.querySelector("[data-control=\"snapToGrid\"]");
   const gridInput = panel.querySelector("[data-control=\"gridSize\"]");
   const globalAlphaInput = panel.querySelector("[data-control=\"globalAlpha\"]");
   const globalSpawnInput = panel.querySelector("[data-control=\"globalSpawnMul\"]");
   const globalLifeInput = panel.querySelector("[data-control=\"globalLifeMul\"]");
   const globalSizeInput = panel.querySelector("[data-control=\"globalSizeMul\"]");
+  const platformColorsWrap = panel.querySelector("[data-control=\"platformColors\"]");
+  const platformWidthInput = panel.querySelector("[data-control=\"platformWidth\"]");
+  const platformHeightInput = panel.querySelector("[data-control=\"platformHeight\"]");
+  const platformHorizontalRangeInput = panel.querySelector(
+    "[data-control=\"platformHorizontalRange\"]"
+  );
+  const platformMinGapInput = panel.querySelector("[data-control=\"platformMinGap\"]");
+  const platformMaxGapInput = panel.querySelector("[data-control=\"platformMaxGap\"]");
+  const platformStartCountInput = panel.querySelector("[data-control=\"platformStartCount\"]");
+  const platformDestroyInput = panel.querySelector(
+    "[data-control=\"platformDestroyOnJump\"]"
+  );
+  const platformRespawnInput = panel.querySelector(
+    "[data-control=\"platformRespawnOnGround\"]"
+  );
+  const platformFadeInput = panel.querySelector("[data-control=\"platformFadeDuration\"]");
+  const platformDescentInput = panel.querySelector("[data-control=\"platformDescentSpeed\"]");
   const spawnInput = panel.querySelector("[data-control=\"spawnRate\"]");
   const maxSpawnInput = panel.querySelector("[data-control=\"maxSpawnRate\"]");
   const sizeInput = panel.querySelector("[data-control=\"size\"]");
@@ -582,24 +594,22 @@ function initTailViewer(config, tailEmitter) {
   const airPushInput = panel.querySelector("[data-control=\"airPush\"]");
   const fixedColorRow = panel.querySelector("[data-color-fixed]");
   const paletteRows = panel.querySelectorAll("[data-color-palette]");
+  const performanceMonitor = document.querySelector("[data-performance-monitor]");
   const metrics = {
-    fps: panel.querySelector("[data-metric=\"fps\"]"),
-    particles: panel.querySelector("[data-metric=\"particles\"]"),
+    fps: performanceMonitor?.querySelector("[data-metric=\"fps\"]"),
+    particles: performanceMonitor?.querySelector("[data-metric=\"particles\"]"),
   };
 
   if (
-    !layerList ||
+    !layerButtons ||
     !controls ||
-    !stageBar ||
-    !stageList ||
-    !addStageButton ||
-    !progressInput ||
     !snapToggle ||
     !gridInput ||
     !globalAlphaInput ||
     !globalSpawnInput ||
     !globalLifeInput ||
     !globalSizeInput ||
+    !platformColorsWrap ||
     !spawnInput ||
     !maxSpawnInput ||
     !sizeInput ||
@@ -626,41 +636,20 @@ function initTailViewer(config, tailEmitter) {
     !fixedColorRow ||
     paletteRows.length === 0 ||
     !metrics.fps ||
-    !metrics.particles
+    !metrics.particles ||
+    !platformWidthInput ||
+    !platformHeightInput ||
+    !platformHorizontalRangeInput ||
+    !platformMinGapInput ||
+    !platformMaxGapInput ||
+    !platformStartCountInput ||
+    !platformDestroyInput ||
+    !platformRespawnInput ||
+    !platformFadeInput ||
+    !platformDescentInput
   ) {
     return null;
   }
-
-  const valueLabels = {
-    progress: panel.querySelector("[data-value=\"progress\"]"),
-    gridSize: panel.querySelector("[data-value=\"gridSize\"]"),
-    spawnRate: panel.querySelector("[data-value=\"spawnRate\"]"),
-    maxSpawnRate: panel.querySelector("[data-value=\"maxSpawnRate\"]"),
-    size: panel.querySelector("[data-value=\"size\"]"),
-    sizeJitter: panel.querySelector("[data-value=\"sizeJitter\"]"),
-    life: panel.querySelector("[data-value=\"life\"]"),
-    lifeJitter: panel.querySelector("[data-value=\"lifeJitter\"]"),
-    alpha: panel.querySelector("[data-value=\"alpha\"]"),
-    enabledAt: panel.querySelector("[data-value=\"enabledAt\"]"),
-    paletteBlend: panel.querySelector("[data-value=\"paletteBlend\"]"),
-    followStrength: panel.querySelector("[data-value=\"followStrength\"]"),
-    offsetRadius: panel.querySelector("[data-value=\"offsetRadius\"]"),
-    offsetBias: panel.querySelector("[data-value=\"offsetBias\"]"),
-    driftSpeed: panel.querySelector("[data-value=\"driftSpeed\"]"),
-    driftJitter: panel.querySelector("[data-value=\"driftJitter\"]"),
-    gravity: panel.querySelector("[data-value=\"gravity\"]"),
-    airPush: panel.querySelector("[data-value=\"airPush\"]"),
-    globalAlpha: panel.querySelector("[data-value=\"globalAlpha\"]"),
-    globalSpawnMul: panel.querySelector("[data-value=\"globalSpawnMul\"]"),
-    globalLifeMul: panel.querySelector("[data-value=\"globalLifeMul\"]"),
-    globalSizeMul: panel.querySelector("[data-value=\"globalSizeMul\"]"),
-  };
-
-  const multipliers = {
-    spawn: panel.querySelector("[data-mul=\"spawn\"]"),
-    life: panel.querySelector("[data-mul=\"life\"]"),
-    size: panel.querySelector("[data-mul=\"size\"]"),
-  };
 
   const defaultTailConfig = JSON.parse(JSON.stringify(tailConfig));
 
@@ -674,7 +663,6 @@ function initTailViewer(config, tailEmitter) {
     if (tailEmitter) {
       tailEmitter.layerStates = tailConfig.layers.map(() => ({ spawnAccumulator: 0 }));
     }
-    refreshStageList();
     refreshLayerList();
     refreshControls();
   }
@@ -698,40 +686,22 @@ function initTailViewer(config, tailEmitter) {
     return Math.max(0, Math.min(length - 1, index));
   }
 
-  function formatValue(value, digits = 2) {
-    if (typeof value === "number") {
-      return value.toFixed(digits);
+  function clampNumber(value, min, max) {
+    let next = value;
+    if (Number.isFinite(min)) {
+      next = Math.max(min, next);
     }
-    return String(value ?? "");
+    if (Number.isFinite(max)) {
+      next = Math.min(max, next);
+    }
+    return next;
   }
 
-  function resolveProgressStage(progress) {
-    const stages = tailConfig.progressStages;
-    if (!Array.isArray(stages) || stages.length === 0) {
-      return null;
-    }
-    return stages.find((stage) => progress >= stage.min && progress <= stage.max) ?? null;
-  }
-
-  function refreshStageBar(progress) {
-    stageBar.innerHTML = "";
-    const stages = tailConfig.progressStages;
-    if (!Array.isArray(stages) || stages.length === 0) return;
-
-    stages.forEach((stage) => {
-      const segment = document.createElement("button");
-      segment.type = "button";
-      segment.className = "tail-viewer__stage-segment";
-      const mid = (stage.min + stage.max) / 2;
-      segment.style.flex = String(Math.max(0.1, stage.max - stage.min));
-      if (progress >= stage.min && progress <= stage.max) {
-        segment.classList.add("is-active");
-      }
-      segment.addEventListener("click", () => {
-        updateProgress(mid);
-      });
-      stageBar.appendChild(segment);
-    });
+  function setNumberInput(input, { min, max, step, value }) {
+    if (min !== undefined) input.min = String(min);
+    if (max !== undefined) input.max = String(max);
+    if (step !== undefined) input.step = String(step);
+    if (value !== undefined && value !== null) input.value = String(value);
   }
 
   const viewerState = {
@@ -739,32 +709,12 @@ function initTailViewer(config, tailEmitter) {
     lockedProgress: tailEmitter?.getIntensity?.() ?? 0,
   };
 
-  function updateMultipliers(progress) {
-    const stage = resolveProgressStage(progress);
-    const globalSpawn = tailConfig.globalSpawnMul ?? 1;
-    const globalLife = tailConfig.globalLifeMul ?? 1;
-    const globalSize = tailConfig.globalSizeMul ?? 1;
-    const spawnMul = globalSpawn * (stage?.spawnMul ?? 1);
-    const lifeMul = globalLife * (stage?.lifeMul ?? 1);
-    const sizeMul = globalSize * (stage?.sizeMul ?? 1);
-
-    multipliers.spawn.textContent = `spawn ×${formatValue(spawnMul, 2)}`;
-    multipliers.life.textContent = `life ×${formatValue(lifeMul, 2)}`;
-    multipliers.size.textContent = `size ×${formatValue(sizeMul, 2)}`;
-
-    if (stageLabel) {
-      stageLabel.textContent = stage
-        ? `${formatValue(stage.min, 2)}–${formatValue(stage.max, 2)}`
-        : "no stage";
-    }
+  if (performanceMonitor) {
+    performanceMonitor.classList.toggle("hidden", panel.classList.contains("hidden"));
   }
 
-  function updateProgress(progress) {
+  function setLockedProgress(progress) {
     const clamped = Math.max(0, Math.min(1, progress));
-    progressInput.value = String(clamped);
-    valueLabels.progress.textContent = formatValue(clamped, 2);
-    refreshStageBar(clamped);
-    updateMultipliers(clamped);
     viewerState.lockedProgress = clamped;
     if (viewerState.locked) {
       tailEmitter.setIntensity(clamped);
@@ -775,46 +725,43 @@ function initTailViewer(config, tailEmitter) {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
 
-    spawnInput.min = "0";
-    spawnInput.max = String(Math.max(layer.maxSpawnRate * 1.5, 120));
-    spawnInput.step = "1";
-    spawnInput.value = String(layer.baseSpawnRate ?? 0);
+    setNumberInput(spawnInput, {
+      min: 0,
+      max: Math.max(layer.maxSpawnRate * 1.5, 120),
+      step: 1,
+      value: layer.baseSpawnRate ?? 0,
+    });
 
-    maxSpawnInput.min = "0";
-    maxSpawnInput.max = String(Math.max(layer.maxSpawnRate * 2, 200));
-    maxSpawnInput.step = "1";
-    maxSpawnInput.value = String(layer.maxSpawnRate ?? 0);
+    setNumberInput(maxSpawnInput, {
+      min: 0,
+      max: Math.max(layer.maxSpawnRate * 2, 200),
+      step: 1,
+      value: layer.maxSpawnRate ?? 0,
+    });
 
-    sizeInput.min = "0.5";
-    sizeInput.max = "12";
-    sizeInput.step = "0.1";
-    sizeInput.value = String(layer.size ?? 1);
-
-    sizeJitterInput.min = "0";
-    sizeJitterInput.max = "6";
-    sizeJitterInput.step = "0.1";
-    sizeJitterInput.value = String(layer.sizeJitter ?? 0);
-
-    lifeInput.min = "0.1";
-    lifeInput.max = "2";
-    lifeInput.step = "0.05";
-    lifeInput.value = String(layer.life ?? 0.5);
-
-    lifeJitterInput.min = "0";
-    lifeJitterInput.max = "1.5";
-    lifeJitterInput.step = "0.05";
-    lifeJitterInput.value = String(layer.lifeJitter ?? 0);
-
-    alphaInput.min = "0";
-    alphaInput.max = "1";
-    alphaInput.step = "0.01";
-    alphaInput.value = String(layer.alpha ?? 1);
+    setNumberInput(sizeInput, { min: 0.5, max: 12, step: 0.1, value: layer.size ?? 1 });
+    setNumberInput(sizeJitterInput, {
+      min: 0,
+      max: 6,
+      step: 0.1,
+      value: layer.sizeJitter ?? 0,
+    });
+    setNumberInput(lifeInput, { min: 0.1, max: 2, step: 0.05, value: layer.life ?? 0.5 });
+    setNumberInput(lifeJitterInput, {
+      min: 0,
+      max: 1.5,
+      step: 0.05,
+      value: layer.lifeJitter ?? 0,
+    });
+    setNumberInput(alphaInput, { min: 0, max: 1, step: 0.01, value: layer.alpha ?? 1 });
 
     enabledInput.checked = Boolean(layer.enabled);
-    enabledAtInput.min = "0";
-    enabledAtInput.max = "1";
-    enabledAtInput.step = "0.01";
-    enabledAtInput.value = String(layer.enabledAt ?? 0);
+    setNumberInput(enabledAtInput, {
+      min: 0,
+      max: 1,
+      step: 0.01,
+      value: layer.enabledAt ?? 0,
+    });
 
     modeSelect.value = layer.mode ?? "follow";
     shapeSelect.value = layer.shape ?? "square";
@@ -823,141 +770,119 @@ function initTailViewer(config, tailEmitter) {
     colorTextInput.value = layer.color ?? "#ffffff";
     paletteInput.value = Array.isArray(layer.palette) ? layer.palette.join(", ") : "";
 
-    paletteBlendInput.min = "0";
-    paletteBlendInput.max = "1";
-    paletteBlendInput.step = "0.01";
-    paletteBlendInput.value = String(layer.paletteBlend ?? 0);
-
-    followStrengthInput.min = "0";
-    followStrengthInput.max = "1.5";
-    followStrengthInput.step = "0.01";
-    followStrengthInput.value = String(layer.followStrength ?? 0);
-
-    offsetRadiusInput.min = "0";
-    offsetRadiusInput.max = "40";
-    offsetRadiusInput.step = "0.1";
-    offsetRadiusInput.value = String(layer.offsetRadius ?? 0);
-
-    offsetBiasInput.min = "0";
-    offsetBiasInput.max = "1";
-    offsetBiasInput.step = "0.01";
-    offsetBiasInput.value = String(layer.offsetBias ?? 0);
-
-    driftSpeedInput.min = "-200";
-    driftSpeedInput.max = "200";
-    driftSpeedInput.step = "1";
-    driftSpeedInput.value = String(layer.driftSpeed ?? 0);
-
-    driftJitterInput.min = "0";
-    driftJitterInput.max = "4";
-    driftJitterInput.step = "0.1";
-    driftJitterInput.value = String(layer.driftJitter ?? 0);
-
-    gravityInput.min = "-200";
-    gravityInput.max = "200";
-    gravityInput.step = "1";
-    gravityInput.value = String(layer.gravity ?? 0);
-
-    airPushInput.min = "-50";
-    airPushInput.max = "50";
-    airPushInput.step = "0.5";
-    airPushInput.value = String(layer.airPush ?? 0);
+    setNumberInput(paletteBlendInput, {
+      min: 0,
+      max: 1,
+      step: 0.01,
+      value: layer.paletteBlend ?? 0,
+    });
+    setNumberInput(followStrengthInput, {
+      min: 0,
+      max: 1.5,
+      step: 0.01,
+      value: layer.followStrength ?? 0,
+    });
+    setNumberInput(offsetRadiusInput, {
+      min: 0,
+      max: 40,
+      step: 0.1,
+      value: layer.offsetRadius ?? 0,
+    });
+    setNumberInput(offsetBiasInput, {
+      min: 0,
+      max: 1,
+      step: 0.01,
+      value: layer.offsetBias ?? 0,
+    });
+    setNumberInput(driftSpeedInput, {
+      min: -200,
+      max: 200,
+      step: 1,
+      value: layer.driftSpeed ?? 0,
+    });
+    setNumberInput(driftJitterInput, {
+      min: 0,
+      max: 4,
+      step: 0.1,
+      value: layer.driftJitter ?? 0,
+    });
+    setNumberInput(gravityInput, { min: -200, max: 200, step: 1, value: layer.gravity ?? 0 });
+    setNumberInput(airPushInput, { min: -50, max: 50, step: 0.5, value: layer.airPush ?? 0 });
 
     snapToggle.checked = Boolean(tailConfig.snapToGrid);
-    gridInput.min = "1";
-    gridInput.max = "8";
-    gridInput.step = "1";
-    gridInput.value = String(tailConfig.gridSize ?? 1);
-
-    globalAlphaInput.min = "0";
-    globalAlphaInput.max = "2";
-    globalAlphaInput.step = "0.05";
-    globalAlphaInput.value = String(tailConfig.globalAlpha ?? 1);
-
-    globalSpawnInput.min = "0";
-    globalSpawnInput.max = "3";
-    globalSpawnInput.step = "0.05";
-    globalSpawnInput.value = String(tailConfig.globalSpawnMul ?? 1);
-
-    globalLifeInput.min = "0";
-    globalLifeInput.max = "3";
-    globalLifeInput.step = "0.05";
-    globalLifeInput.value = String(tailConfig.globalLifeMul ?? 1);
-
-    globalSizeInput.min = "0";
-    globalSizeInput.max = "3";
-    globalSizeInput.step = "0.05";
-    globalSizeInput.value = String(tailConfig.globalSizeMul ?? 1);
-
-    progressInput.min = "0";
-    progressInput.max = "1";
-    progressInput.step = "0.01";
-
-    valueLabels.spawnRate.textContent = formatValue(Number(spawnInput.value), 0);
-    valueLabels.maxSpawnRate.textContent = formatValue(Number(maxSpawnInput.value), 0);
-    valueLabels.size.textContent = formatValue(Number(sizeInput.value), 2);
-    valueLabels.sizeJitter.textContent = formatValue(Number(sizeJitterInput.value), 2);
-    valueLabels.life.textContent = formatValue(Number(lifeInput.value), 2);
-    valueLabels.lifeJitter.textContent = formatValue(Number(lifeJitterInput.value), 2);
-    valueLabels.alpha.textContent = formatValue(Number(alphaInput.value), 2);
-    valueLabels.enabledAt.textContent = formatValue(Number(enabledAtInput.value), 2);
-    valueLabels.paletteBlend.textContent = formatValue(Number(paletteBlendInput.value), 2);
-    valueLabels.followStrength.textContent = formatValue(Number(followStrengthInput.value), 2);
-    valueLabels.offsetRadius.textContent = formatValue(Number(offsetRadiusInput.value), 1);
-    valueLabels.offsetBias.textContent = formatValue(Number(offsetBiasInput.value), 2);
-    valueLabels.driftSpeed.textContent = formatValue(Number(driftSpeedInput.value), 1);
-    valueLabels.driftJitter.textContent = formatValue(Number(driftJitterInput.value), 2);
-    valueLabels.gravity.textContent = formatValue(Number(gravityInput.value), 1);
-    valueLabels.airPush.textContent = formatValue(Number(airPushInput.value), 2);
-    valueLabels.gridSize.textContent = formatValue(Number(gridInput.value), 0);
-    valueLabels.globalAlpha.textContent = formatValue(Number(globalAlphaInput.value), 2);
-    valueLabels.globalSpawnMul.textContent = formatValue(Number(globalSpawnInput.value), 2);
-    valueLabels.globalLifeMul.textContent = formatValue(Number(globalLifeInput.value), 2);
-    valueLabels.globalSizeMul.textContent = formatValue(Number(globalSizeInput.value), 2);
-    updateColorControls();
-    updateProgress(viewerState.lockedProgress);
-  }
-
-  function refreshStageList() {
-    stageList.innerHTML = "";
-    const stages = tailConfig.progressStages ?? [];
-    stages.forEach((stage, index) => {
-      const row = document.createElement("div");
-      row.className = "tail-viewer__stage-row";
-      row.dataset.index = String(index);
-      const fields = [
-        { key: "min", value: stage.min ?? 0 },
-        { key: "max", value: stage.max ?? 0 },
-        { key: "spawnMul", value: stage.spawnMul ?? 1 },
-        { key: "lifeMul", value: stage.lifeMul ?? 1 },
-        { key: "sizeMul", value: stage.sizeMul ?? 1 },
-      ];
-      fields.forEach((field) => {
-        const input = document.createElement("input");
-        input.type = "number";
-        input.step = "0.01";
-        input.value = String(field.value);
-        input.dataset.key = field.key;
-        input.addEventListener("change", () => {
-          const numeric = Number(input.value);
-          stage[field.key] = Number.isFinite(numeric) ? numeric : stage[field.key];
-          refreshStageBar(viewerState.lockedProgress);
-          updateMultipliers(viewerState.lockedProgress);
-        });
-        row.appendChild(input);
-      });
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.textContent = "×";
-      remove.addEventListener("click", () => {
-        tailConfig.progressStages.splice(index, 1);
-        refreshStageList();
-        refreshStageBar(viewerState.lockedProgress);
-        updateMultipliers(viewerState.lockedProgress);
-      });
-      row.appendChild(remove);
-      stageList.appendChild(row);
+    setNumberInput(gridInput, { min: 1, max: 8, step: 1, value: tailConfig.gridSize ?? 1 });
+    setNumberInput(globalAlphaInput, {
+      min: 0,
+      max: 2,
+      step: 0.05,
+      value: tailConfig.globalAlpha ?? 1,
     });
+    setNumberInput(globalSpawnInput, {
+      min: 0,
+      max: 3,
+      step: 0.05,
+      value: tailConfig.globalSpawnMul ?? 1,
+    });
+    setNumberInput(globalLifeInput, {
+      min: 0,
+      max: 3,
+      step: 0.05,
+      value: tailConfig.globalLifeMul ?? 1,
+    });
+    setNumberInput(globalSizeInput, {
+      min: 0,
+      max: 3,
+      step: 0.05,
+      value: tailConfig.globalSizeMul ?? 1,
+    });
+    setNumberInput(platformWidthInput, { min: 40, max: 260, step: 1, value: config.platforms.width });
+    setNumberInput(platformHeightInput, {
+      min: 8,
+      max: 80,
+      step: 1,
+      value: config.platforms.height,
+    });
+    setNumberInput(platformHorizontalRangeInput, {
+      min: 0,
+      max: 0.9,
+      step: 0.01,
+      value: config.platforms.horizontalRange,
+    });
+    setNumberInput(platformMinGapInput, {
+      min: 40,
+      max: 600,
+      step: 1,
+      value: config.platforms.minGap,
+    });
+    setNumberInput(platformMaxGapInput, {
+      min: 40,
+      max: 600,
+      step: 1,
+      value: config.platforms.maxGap,
+    });
+    setNumberInput(platformStartCountInput, {
+      min: 0,
+      max: 40,
+      step: 1,
+      value: config.platforms.startCount,
+    });
+    platformDestroyInput.checked = Boolean(config.platforms.destroyOnJump);
+    platformRespawnInput.checked = Boolean(config.platforms.respawnOnGround);
+    setNumberInput(platformFadeInput, {
+      min: 0,
+      max: 2,
+      step: 0.05,
+      value: config.platforms.fadeDuration,
+    });
+    setNumberInput(platformDescentInput, {
+      min: -300,
+      max: 300,
+      step: 1,
+      value: config.platforms.descentSpeed,
+    });
+    renderPlatformColors();
+    updateColorControls();
+    setLockedProgress(viewerState.lockedProgress);
   }
 
   function updateColorControls() {
@@ -970,91 +895,96 @@ function initTailViewer(config, tailEmitter) {
     });
   }
 
-  function refreshLayerList() {
-    layerList.innerHTML = "";
-    tailConfig.layers.forEach((layer, index) => {
+  function renderPlatformColors() {
+    platformColorsWrap.innerHTML = "";
+    const colors = Array.isArray(config.platforms.colors) ? config.platforms.colors : [];
+    config.platforms.colors = colors;
+    colors.forEach((color, index) => {
       const row = document.createElement("div");
-      row.className = "tail-viewer__layer-row";
-      row.dataset.index = String(index);
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = Boolean(layer.enabled);
-      checkbox.className = "tail-viewer__layer-toggle";
-      checkbox.addEventListener("change", () => {
-        layer.enabled = checkbox.checked;
+      row.className = "tail-viewer__platform-color";
+      const colorInput = document.createElement("input");
+      colorInput.type = "color";
+      colorInput.value = color;
+      const textInput = document.createElement("input");
+      textInput.type = "text";
+      textInput.value = color;
+      colorInput.addEventListener("input", () => {
+        config.platforms.colors[index] = colorInput.value;
+        textInput.value = colorInput.value;
       });
+      textInput.addEventListener("change", () => {
+        config.platforms.colors[index] = textInput.value;
+        if (textInput.value.startsWith("#")) {
+          colorInput.value = textInput.value;
+        }
+      });
+      row.appendChild(colorInput);
+      row.appendChild(textInput);
+      platformColorsWrap.appendChild(row);
+    });
+  }
+
+  function refreshLayerList() {
+    layerButtons.innerHTML = "";
+    tailConfig.layers.forEach((layer, index) => {
+      const name = layer.name ? ` ${layer.name}` : "";
       const button = document.createElement("button");
       button.type = "button";
       button.className = "tail-viewer__layer-button";
       if (index === activeIndex) {
         button.classList.add("is-active");
       }
-      const name = layer.name ? ` ${layer.name}` : "";
-      button.textContent = `${index + 1}.${name} [${layer.mode}/${layer.shape}]`;
+      button.textContent = String(index + 1);
+      button.title = `${index + 1}.${name} [${layer.mode}/${layer.shape}]`;
       button.addEventListener("click", () => {
         activeIndex = clampIndex(index, tailConfig.layers.length);
         refreshLayerList();
         refreshControls();
       });
-      row.appendChild(checkbox);
-      row.appendChild(button);
-      layerList.appendChild(row);
+      layerButtons.appendChild(button);
     });
-  }
-
-  function updateSliderValue(input, label, digits = 2) {
-    if (label) {
-      label.textContent = formatValue(Number(input.value), digits);
-    }
   }
 
   function handleSpawnRateInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.baseSpawnRate = Number(spawnInput.value);
-    updateSliderValue(spawnInput, valueLabels.spawnRate, 0);
   }
 
   function handleMaxSpawnRateInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.maxSpawnRate = Number(maxSpawnInput.value);
-    updateSliderValue(maxSpawnInput, valueLabels.maxSpawnRate, 0);
   }
 
   function handleSizeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.size = Number(sizeInput.value);
-    updateSliderValue(sizeInput, valueLabels.size, 2);
   }
 
   function handleSizeJitterInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.sizeJitter = Number(sizeJitterInput.value);
-    updateSliderValue(sizeJitterInput, valueLabels.sizeJitter, 2);
   }
 
   function handleLifeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.life = Number(lifeInput.value);
-    updateSliderValue(lifeInput, valueLabels.life, 2);
   }
 
   function handleLifeJitterInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.lifeJitter = Number(lifeJitterInput.value);
-    updateSliderValue(lifeJitterInput, valueLabels.lifeJitter, 2);
   }
 
   function handleAlphaInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.alpha = Number(alphaInput.value);
-    updateSliderValue(alphaInput, valueLabels.alpha, 2);
   }
 
   function handleEnabledInput() {
@@ -1067,7 +997,6 @@ function initTailViewer(config, tailEmitter) {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.enabledAt = Number(enabledAtInput.value);
-    updateSliderValue(enabledAtInput, valueLabels.enabledAt, 2);
   }
 
   function handleModeSelect() {
@@ -1121,56 +1050,48 @@ function initTailViewer(config, tailEmitter) {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.paletteBlend = Number(paletteBlendInput.value);
-    updateSliderValue(paletteBlendInput, valueLabels.paletteBlend, 2);
   }
 
   function handleFollowStrengthInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.followStrength = Number(followStrengthInput.value);
-    updateSliderValue(followStrengthInput, valueLabels.followStrength, 2);
   }
 
   function handleOffsetRadiusInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.offsetRadius = Number(offsetRadiusInput.value);
-    updateSliderValue(offsetRadiusInput, valueLabels.offsetRadius, 1);
   }
 
   function handleOffsetBiasInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.offsetBias = Number(offsetBiasInput.value);
-    updateSliderValue(offsetBiasInput, valueLabels.offsetBias, 2);
   }
 
   function handleDriftSpeedInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.driftSpeed = Number(driftSpeedInput.value);
-    updateSliderValue(driftSpeedInput, valueLabels.driftSpeed, 1);
   }
 
   function handleDriftJitterInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.driftJitter = Number(driftJitterInput.value);
-    updateSliderValue(driftJitterInput, valueLabels.driftJitter, 2);
   }
 
   function handleGravityInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.gravity = Number(gravityInput.value);
-    updateSliderValue(gravityInput, valueLabels.gravity, 1);
   }
 
   function handleAirPushInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
     layer.airPush = Number(airPushInput.value);
-    updateSliderValue(airPushInput, valueLabels.airPush, 2);
   }
 
   function handleSnapToggle() {
@@ -1179,66 +1100,167 @@ function initTailViewer(config, tailEmitter) {
 
   function handleGridInput() {
     tailConfig.gridSize = Number(gridInput.value);
-    updateSliderValue(gridInput, valueLabels.gridSize, 0);
   }
 
   function handleGlobalAlphaInput() {
     tailConfig.globalAlpha = Number(globalAlphaInput.value);
-    updateSliderValue(globalAlphaInput, valueLabels.globalAlpha, 2);
   }
 
   function handleGlobalSpawnInput() {
     tailConfig.globalSpawnMul = Number(globalSpawnInput.value);
-    updateSliderValue(globalSpawnInput, valueLabels.globalSpawnMul, 2);
-    updateMultipliers(viewerState.lockedProgress);
   }
 
   function handleGlobalLifeInput() {
     tailConfig.globalLifeMul = Number(globalLifeInput.value);
-    updateSliderValue(globalLifeInput, valueLabels.globalLifeMul, 2);
-    updateMultipliers(viewerState.lockedProgress);
   }
 
   function handleGlobalSizeInput() {
     tailConfig.globalSizeMul = Number(globalSizeInput.value);
-    updateSliderValue(globalSizeInput, valueLabels.globalSizeMul, 2);
-    updateMultipliers(viewerState.lockedProgress);
   }
 
-  function handleProgressInput() {
-    updateProgress(Number(progressInput.value));
+  function updateExistingPlatforms() {
+    const width = config.platforms.width;
+    const height = config.platforms.height;
+    state.platforms.forEach((platform) => {
+      platform.width = width;
+      platform.height = height;
+    });
   }
 
-  spawnInput.addEventListener("input", handleSpawnRateInput);
-  maxSpawnInput.addEventListener("input", handleMaxSpawnRateInput);
-  sizeInput.addEventListener("input", handleSizeInput);
-  sizeJitterInput.addEventListener("input", handleSizeJitterInput);
-  lifeInput.addEventListener("input", handleLifeInput);
-  lifeJitterInput.addEventListener("input", handleLifeJitterInput);
-  alphaInput.addEventListener("input", handleAlphaInput);
+  function handlePlatformWidthInput() {
+    const value = Number(platformWidthInput.value);
+    if (!Number.isFinite(value)) return;
+    config.platforms.width = value;
+    updateExistingPlatforms();
+  }
+
+  function handlePlatformHeightInput() {
+    const value = Number(platformHeightInput.value);
+    if (!Number.isFinite(value)) return;
+    config.platforms.height = value;
+    updateExistingPlatforms();
+  }
+
+  function handlePlatformHorizontalRangeInput() {
+    const value = Number(platformHorizontalRangeInput.value);
+    if (!Number.isFinite(value)) return;
+    config.platforms.horizontalRange = clampNumber(value, 0, 1);
+    platformHorizontalRangeInput.value = String(config.platforms.horizontalRange);
+  }
+
+  function handlePlatformMinGapInput() {
+    const value = Number(platformMinGapInput.value);
+    if (!Number.isFinite(value)) return;
+    config.platforms.minGap = value;
+    if (config.platforms.minGap > config.platforms.maxGap) {
+      config.platforms.maxGap = config.platforms.minGap;
+      platformMaxGapInput.value = String(config.platforms.maxGap);
+    }
+  }
+
+  function handlePlatformMaxGapInput() {
+    const value = Number(platformMaxGapInput.value);
+    if (!Number.isFinite(value)) return;
+    config.platforms.maxGap = value;
+    if (config.platforms.maxGap < config.platforms.minGap) {
+      config.platforms.minGap = config.platforms.maxGap;
+      platformMinGapInput.value = String(config.platforms.minGap);
+    }
+  }
+
+  function handlePlatformStartCountInput() {
+    const value = Number(platformStartCountInput.value);
+    if (!Number.isFinite(value)) return;
+    config.platforms.startCount = Math.max(0, Math.floor(value));
+    platformStartCountInput.value = String(config.platforms.startCount);
+  }
+
+  function handlePlatformDestroyInput() {
+    config.platforms.destroyOnJump = platformDestroyInput.checked;
+  }
+
+  function handlePlatformRespawnInput() {
+    config.platforms.respawnOnGround = platformRespawnInput.checked;
+  }
+
+  function handlePlatformFadeInput() {
+    const value = Number(platformFadeInput.value);
+    if (!Number.isFinite(value)) return;
+    config.platforms.fadeDuration = Math.max(0, value);
+    platformFadeInput.value = String(config.platforms.fadeDuration);
+  }
+
+  function handlePlatformDescentInput() {
+    const value = Number(platformDescentInput.value);
+    if (!Number.isFinite(value)) return;
+    config.platforms.descentSpeed = value;
+  }
+
+  function bindNumberInput(input, handler) {
+    input.addEventListener("input", handler);
+    input.addEventListener(
+      "wheel",
+      (event) => {
+        if (document.activeElement !== input && !input.matches(":hover")) return;
+        event.preventDefault();
+        const step = Number.isFinite(Number(input.step)) ? Number(input.step) : 1;
+        if (step === 0) return;
+        const delta = event.deltaY < 0 ? step : -step;
+        const current = Number(input.value);
+        const rawValue = Number.isFinite(current) ? current + delta : delta;
+        const min = input.min === "" ? undefined : Number(input.min);
+        const max = input.max === "" ? undefined : Number(input.max);
+        const next = clampNumber(
+          rawValue,
+          Number.isFinite(min) ? min : undefined,
+          Number.isFinite(max) ? max : undefined
+        );
+        input.value = String(next);
+        handler();
+      },
+      { passive: false }
+    );
+  }
+
+  bindNumberInput(spawnInput, handleSpawnRateInput);
+  bindNumberInput(maxSpawnInput, handleMaxSpawnRateInput);
+  bindNumberInput(sizeInput, handleSizeInput);
+  bindNumberInput(sizeJitterInput, handleSizeJitterInput);
+  bindNumberInput(lifeInput, handleLifeInput);
+  bindNumberInput(lifeJitterInput, handleLifeJitterInput);
+  bindNumberInput(alphaInput, handleAlphaInput);
   enabledInput.addEventListener("change", handleEnabledInput);
-  enabledAtInput.addEventListener("input", handleEnabledAtInput);
+  bindNumberInput(enabledAtInput, handleEnabledAtInput);
   modeSelect.addEventListener("change", handleModeSelect);
   shapeSelect.addEventListener("change", handleShapeSelect);
   colorModeSelect.addEventListener("change", handleColorModeSelect);
   colorInput.addEventListener("input", handleColorInput);
   colorTextInput.addEventListener("change", handleColorTextInput);
   paletteInput.addEventListener("change", handlePaletteInput);
-  paletteBlendInput.addEventListener("input", handlePaletteBlendInput);
-  followStrengthInput.addEventListener("input", handleFollowStrengthInput);
-  offsetRadiusInput.addEventListener("input", handleOffsetRadiusInput);
-  offsetBiasInput.addEventListener("input", handleOffsetBiasInput);
-  driftSpeedInput.addEventListener("input", handleDriftSpeedInput);
-  driftJitterInput.addEventListener("input", handleDriftJitterInput);
-  gravityInput.addEventListener("input", handleGravityInput);
-  airPushInput.addEventListener("input", handleAirPushInput);
+  bindNumberInput(paletteBlendInput, handlePaletteBlendInput);
+  bindNumberInput(followStrengthInput, handleFollowStrengthInput);
+  bindNumberInput(offsetRadiusInput, handleOffsetRadiusInput);
+  bindNumberInput(offsetBiasInput, handleOffsetBiasInput);
+  bindNumberInput(driftSpeedInput, handleDriftSpeedInput);
+  bindNumberInput(driftJitterInput, handleDriftJitterInput);
+  bindNumberInput(gravityInput, handleGravityInput);
+  bindNumberInput(airPushInput, handleAirPushInput);
   snapToggle.addEventListener("change", handleSnapToggle);
-  gridInput.addEventListener("input", handleGridInput);
-  globalAlphaInput.addEventListener("input", handleGlobalAlphaInput);
-  globalSpawnInput.addEventListener("input", handleGlobalSpawnInput);
-  globalLifeInput.addEventListener("input", handleGlobalLifeInput);
-  globalSizeInput.addEventListener("input", handleGlobalSizeInput);
-  progressInput.addEventListener("input", handleProgressInput);
+  bindNumberInput(gridInput, handleGridInput);
+  bindNumberInput(globalAlphaInput, handleGlobalAlphaInput);
+  bindNumberInput(globalSpawnInput, handleGlobalSpawnInput);
+  bindNumberInput(globalLifeInput, handleGlobalLifeInput);
+  bindNumberInput(globalSizeInput, handleGlobalSizeInput);
+  bindNumberInput(platformWidthInput, handlePlatformWidthInput);
+  bindNumberInput(platformHeightInput, handlePlatformHeightInput);
+  bindNumberInput(platformHorizontalRangeInput, handlePlatformHorizontalRangeInput);
+  bindNumberInput(platformMinGapInput, handlePlatformMinGapInput);
+  bindNumberInput(platformMaxGapInput, handlePlatformMaxGapInput);
+  bindNumberInput(platformStartCountInput, handlePlatformStartCountInput);
+  platformDestroyInput.addEventListener("change", handlePlatformDestroyInput);
+  platformRespawnInput.addEventListener("change", handlePlatformRespawnInput);
+  bindNumberInput(platformFadeInput, handlePlatformFadeInput);
+  bindNumberInput(platformDescentInput, handlePlatformDescentInput);
 
   saveButton?.addEventListener("click", () => {
     localStorage.setItem(storageKey, JSON.stringify(tailConfig));
@@ -1262,26 +1284,15 @@ function initTailViewer(config, tailEmitter) {
     console.log("Tail config:", JSON.stringify(tailConfig, null, 2));
   });
 
-  addStageButton?.addEventListener("click", () => {
-    tailConfig.progressStages = tailConfig.progressStages ?? [];
-    tailConfig.progressStages.push({
-      min: 0,
-      max: 1,
-      spawnMul: 1,
-      lifeMul: 1,
-      sizeMul: 1,
-    });
-    refreshStageList();
-    refreshStageBar(viewerState.lockedProgress);
-    updateMultipliers(viewerState.lockedProgress);
-  });
-
   function togglePanel() {
     panel.classList.toggle("hidden");
+    if (performanceMonitor) {
+      performanceMonitor.classList.toggle("hidden", panel.classList.contains("hidden"));
+    }
     viewerState.locked = !panel.classList.contains("hidden");
     if (viewerState.locked) {
       viewerState.lockedProgress = tailEmitter?.getIntensity?.() ?? 0;
-      updateProgress(viewerState.lockedProgress);
+      setLockedProgress(viewerState.lockedProgress);
     } else if (tailEmitter) {
       tailEmitter.setIntensity(viewerState.lockedProgress);
     }
@@ -1294,7 +1305,6 @@ function initTailViewer(config, tailEmitter) {
     togglePanel();
   });
 
-  refreshStageList();
   refreshLayerList();
   refreshControls();
   return { panel, tailEmitter, state: viewerState, metrics };
