@@ -1,6 +1,6 @@
 import { CONFIG } from "./config.js";
 import { ParticleSystem } from "./particlesystem.js";
-import { ParticleTailEmitter } from "./particletail.js";
+import { LayeredParticleTail } from "./particletail.js";
 import { spawnPlatformBurst } from "./particleplatform.js";
 
 const canvas = document.getElementById("game-canvas");
@@ -24,6 +24,7 @@ const state = {
   usedRescueAt: -Infinity,
   audio: null,
   parallaxLayers: [],
+  tailViewer: null,
 };
 
 class SoundSystem {
@@ -480,11 +481,248 @@ function setupInput() {
   window.addEventListener("touchstart", onPointerDown, { passive: true });
 }
 
+function applyTailOverrides(tailConfig, overrides) {
+  if (!overrides || typeof overrides !== "object") return;
+  const scalarKeys = [
+    "snapToGrid",
+    "gridSize",
+    "globalAlpha",
+    "globalSpawnMul",
+    "globalLifeMul",
+    "globalSizeMul",
+  ];
+  scalarKeys.forEach((key) => {
+    const value = overrides[key];
+    if (typeof value === "number" || typeof value === "boolean") {
+      tailConfig[key] = value;
+    }
+  });
+
+  if (Array.isArray(overrides.layers)) {
+    tailConfig.layers = overrides.layers.map((layer, index) => ({
+      ...tailConfig.layers[index],
+      ...layer,
+    }));
+  }
+}
+
+function initTailViewer(config, tailEmitter) {
+  const tailConfig = config.particles.tail;
+  const viewerConfig = tailConfig.viewer ?? { enabled: false };
+  if (!viewerConfig.enabled) return null;
+
+  const panel = document.getElementById("tail-viewer");
+  if (!panel) return null;
+
+  const storageKey = viewerConfig.storageKey ?? "tailViewerConfig";
+  const layerList = panel.querySelector("[data-layer-list]");
+  const controls = panel.querySelector("[data-layer-controls]");
+  const saveButton = panel.querySelector("[data-action=\"save\"]");
+  const dumpButton = panel.querySelector("[data-action=\"dump\"]");
+  const gridInput = panel.querySelector("[data-control=\"gridSize\"]");
+  const spawnInput = panel.querySelector("[data-control=\"spawnRate\"]");
+  const sizeInput = panel.querySelector("[data-control=\"size\"]");
+  const lifeInput = panel.querySelector("[data-control=\"life\"]");
+  const alphaInput = panel.querySelector("[data-control=\"alpha\"]");
+
+  if (!layerList || !controls || !gridInput || !spawnInput || !sizeInput || !lifeInput || !alphaInput) {
+    return null;
+  }
+
+  const valueLabels = {
+    gridSize: panel.querySelector("[data-value=\"gridSize\"]"),
+    spawnRate: panel.querySelector("[data-value=\"spawnRate\"]"),
+    size: panel.querySelector("[data-value=\"size\"]"),
+    life: panel.querySelector("[data-value=\"life\"]"),
+    alpha: panel.querySelector("[data-value=\"alpha\"]"),
+  };
+
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    try {
+      applyTailOverrides(tailConfig, JSON.parse(saved));
+      if (tailEmitter) {
+        tailEmitter.layerStates = tailConfig.layers.map(() => ({ spawnAccumulator: 0 }));
+      }
+    } catch (error) {
+      console.warn("Tail viewer config load failed.", error);
+    }
+  }
+
+  let activeIndex = clampIndex(
+    viewerConfig.defaultLayerIndex ?? 0,
+    tailConfig.layers.length
+  );
+
+  function clampIndex(index, length) {
+    if (length === 0) return 0;
+    return Math.max(0, Math.min(length - 1, index));
+  }
+
+  function formatValue(value, digits = 2) {
+    if (typeof value === "number") {
+      return value.toFixed(digits);
+    }
+    return String(value ?? "");
+  }
+
+  function refreshControls() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+
+    const ratio = layer.baseSpawnRate > 0 ? layer.maxSpawnRate / layer.baseSpawnRate : 1;
+    spawnInput.min = "0";
+    spawnInput.max = String(Math.max(layer.maxSpawnRate * 1.5, 120));
+    spawnInput.step = "1";
+    spawnInput.value = String(layer.baseSpawnRate ?? 0);
+    spawnInput.dataset.spawnRatio = String(ratio);
+
+    sizeInput.min = "0.5";
+    sizeInput.max = "12";
+    sizeInput.step = "0.1";
+    sizeInput.value = String(layer.size ?? 1);
+
+    lifeInput.min = "0.1";
+    lifeInput.max = "2";
+    lifeInput.step = "0.05";
+    lifeInput.value = String(layer.life ?? 0.5);
+
+    alphaInput.min = "0";
+    alphaInput.max = "1";
+    alphaInput.step = "0.01";
+    alphaInput.value = String(layer.alpha ?? 1);
+
+    gridInput.min = "1";
+    gridInput.max = "8";
+    gridInput.step = "1";
+    gridInput.value = String(tailConfig.gridSize ?? 1);
+
+    valueLabels.spawnRate.textContent = formatValue(Number(spawnInput.value), 0);
+    valueLabels.size.textContent = formatValue(Number(sizeInput.value), 2);
+    valueLabels.life.textContent = formatValue(Number(lifeInput.value), 2);
+    valueLabels.alpha.textContent = formatValue(Number(alphaInput.value), 2);
+    valueLabels.gridSize.textContent = formatValue(Number(gridInput.value), 0);
+  }
+
+  function refreshLayerList() {
+    layerList.innerHTML = "";
+    tailConfig.layers.forEach((layer, index) => {
+      const row = document.createElement("div");
+      row.className = "tail-viewer__layer-row";
+      row.dataset.index = String(index);
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = Boolean(layer.enabled);
+      checkbox.className = "tail-viewer__layer-toggle";
+      checkbox.addEventListener("change", () => {
+        layer.enabled = checkbox.checked;
+      });
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tail-viewer__layer-button";
+      if (index === activeIndex) {
+        button.classList.add("is-active");
+      }
+      const name = layer.name ? ` ${layer.name}` : "";
+      button.textContent = `${index + 1}.${name} [${layer.mode}/${layer.shape}]`;
+      button.addEventListener("click", () => {
+        activeIndex = clampIndex(index, tailConfig.layers.length);
+        refreshLayerList();
+        refreshControls();
+      });
+      row.appendChild(checkbox);
+      row.appendChild(button);
+      layerList.appendChild(row);
+    });
+  }
+
+  function updateSliderValue(input, label, digits = 2) {
+    if (label) {
+      label.textContent = formatValue(Number(input.value), digits);
+    }
+  }
+
+  function handleSpawnRateInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    const ratio = Number(spawnInput.dataset.spawnRatio || 1);
+    const base = Number(spawnInput.value);
+    layer.baseSpawnRate = base;
+    layer.maxSpawnRate = base * ratio;
+    updateSliderValue(spawnInput, valueLabels.spawnRate, 0);
+  }
+
+  function handleSizeInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.size = Number(sizeInput.value);
+    updateSliderValue(sizeInput, valueLabels.size, 2);
+  }
+
+  function handleLifeInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.life = Number(lifeInput.value);
+    updateSliderValue(lifeInput, valueLabels.life, 2);
+  }
+
+  function handleAlphaInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.alpha = Number(alphaInput.value);
+    updateSliderValue(alphaInput, valueLabels.alpha, 2);
+  }
+
+  function handleGridInput() {
+    tailConfig.gridSize = Number(gridInput.value);
+    updateSliderValue(gridInput, valueLabels.gridSize, 0);
+  }
+
+  spawnInput.addEventListener("input", handleSpawnRateInput);
+  sizeInput.addEventListener("input", handleSizeInput);
+  lifeInput.addEventListener("input", handleLifeInput);
+  alphaInput.addEventListener("input", handleAlphaInput);
+  gridInput.addEventListener("input", handleGridInput);
+
+  saveButton?.addEventListener("click", () => {
+    const payload = {
+      snapToGrid: tailConfig.snapToGrid,
+      gridSize: tailConfig.gridSize,
+      globalAlpha: tailConfig.globalAlpha,
+      globalSpawnMul: tailConfig.globalSpawnMul,
+      globalLifeMul: tailConfig.globalLifeMul,
+      globalSizeMul: tailConfig.globalSizeMul,
+      layers: tailConfig.layers,
+    };
+    localStorage.setItem(storageKey, JSON.stringify(payload));
+  });
+
+  dumpButton?.addEventListener("click", () => {
+    console.log("Tail config:", JSON.stringify(tailConfig, null, 2));
+  });
+
+  function togglePanel() {
+    panel.classList.toggle("hidden");
+  }
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key.toLowerCase() !== "v") return;
+    const tag = event.target?.tagName?.toLowerCase();
+    if (tag === "input" || tag === "textarea") return;
+    togglePanel();
+  });
+
+  refreshLayerList();
+  refreshControls();
+  return { panel, tailEmitter };
+}
+
 function init() {
   state.audio = new SoundSystem(CONFIG.audio);
   state.particleSystem = new ParticleSystem({ maxParticles: CONFIG.particles.poolSize });
-  state.tailEmitter = new ParticleTailEmitter(state.particleSystem, CONFIG.particles.tail);
+  state.tailEmitter = new LayeredParticleTail(state.particleSystem, CONFIG.particles.tail);
   initParallax();
+  state.tailViewer = initTailViewer(CONFIG, state.tailEmitter);
   resize();
   resetGame();
   setupInput();

@@ -10,6 +10,48 @@
     <div id="game-root">
       <canvas id="game-canvas"></canvas>
       <div id="overlay">click to jump</div>
+      <div id="tail-viewer" class="tail-viewer hidden">
+        <div class="tail-viewer__header">
+          <div>
+            <strong>Tail Viewer</strong>
+            <span class="tail-viewer__hint">V to toggle</span>
+          </div>
+          <div class="tail-viewer__actions">
+            <button type="button" data-action="save">Save</button>
+            <button type="button" data-action="dump">Dump JSON</button>
+          </div>
+        </div>
+        <div class="tail-viewer__body">
+          <div class="tail-viewer__layers" data-layer-list></div>
+          <div class="tail-viewer__controls" data-layer-controls>
+            <div class="tail-viewer__field">
+              <label>Grid Size</label>
+              <input type="range" data-control="gridSize" />
+              <span data-value="gridSize"></span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Spawn Rate</label>
+              <input type="range" data-control="spawnRate" />
+              <span data-value="spawnRate"></span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Size</label>
+              <input type="range" data-control="size" />
+              <span data-value="size"></span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Life</label>
+              <input type="range" data-control="life" />
+              <span data-value="life"></span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Alpha</label>
+              <input type="range" data-control="alpha" />
+              <span data-value="alpha"></span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <script type="module" src="main.js"></script>
   </body>

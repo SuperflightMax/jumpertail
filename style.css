@@ -50,3 +50,123 @@ body {
 #overlay.hidden {
   opacity: 0;
 }
+
+.tail-viewer {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 320px;
+  background: rgba(10, 10, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  color: #e6e6f2;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  backdrop-filter: blur(8px);
+}
+
+.tail-viewer.hidden {
+  display: none;
+}
+
+.tail-viewer__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.tail-viewer__header strong {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tail-viewer__hint {
+  display: block;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.tail-viewer__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.tail-viewer__actions button {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.tail-viewer__body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.tail-viewer__layers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tail-viewer__layer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tail-viewer__layer-toggle {
+  accent-color: #7c4dff;
+}
+
+.tail-viewer__layer-button {
+  flex: 1;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.tail-viewer__layer-button.is-active {
+  border-color: rgba(124, 77, 255, 0.6);
+  background: rgba(124, 77, 255, 0.2);
+}
+
+.tail-viewer__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tail-viewer__field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.tail-viewer__field label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tail-viewer__field input[type=\"range\"] {
+  width: 100%;
+}
+
+.tail-viewer__field span {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.9);
+}
