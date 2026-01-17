@@ -4,6 +4,24 @@ output information must be added here for each task
 
 ## tasks below
 
+### [S3-T0X] Debug Tail Viewer Layout + Platform Generator Controls
+
+Status: implemented, pending acceptance.
+
+Summary of changes
+- Added `debug.html` as the editor entrypoint and kept `index.html` game-only.
+- Split the Tail Viewer into left/right panels with compact number inputs and a layer dropdown selector.
+- Added a dedicated platform generator control block (without rare platform controls) and mouse-wheel support for numeric tuning.
+
+How to verify
+1. Run `python -m http.server 8000` and open http://localhost:8000/debug.html.
+2. Confirm:
+   - Tail Viewer is visible on start and split around the game.
+   - Layer selector is a dropdown.
+   - Mouse wheel over numeric fields increments/decrements values.
+   - Platform generator controls update spacing/size behavior on new spawns.
+3. Open http://localhost:8000/index.html and confirm only the game is visible.
+
 ### [S3-T0X] Tail V2 — Layered Pixel/Dot Particle Tail + (Optional) Viewer
 
 Status: implemented, pending acceptance.

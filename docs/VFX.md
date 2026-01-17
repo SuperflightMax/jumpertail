@@ -43,12 +43,13 @@ Codex обязан описывать
 
 ## Tail Viewer (debug)
 
-Включается клавишей `V` (можно отключить через `particles.tail.viewer.enabled`).
+Доступен в `debug.html`, включается клавишей `V` (можно отключить через `particles.tail.viewer.enabled`).
 
 Функции:
-- список слоёв (enabled + mode/shape),
+- выбор слоя через компактный dropdown (label с mode/shape),
 - расширенные контролы слоя (spawn/max, size/sizeJitter, life/lifeJitter, alpha, follow/aura/spark параметры, цвета),
 - глобальные контролы (snap/grid, global multipliers),
+- блок генератора платформ (min/max gap, размеры, диапазон по X, стартовое количество, respawn/fade/descent),
 - preview прогресса с сегментами стадий и блокировкой интенсивности при открытом окне,
 - редактор `progressStages` с добавлением/удалением стадий,
 - монитор FPS + количества живых партиклов,

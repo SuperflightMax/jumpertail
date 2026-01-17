@@ -26,6 +26,25 @@ body {
   justify-content: center;
 }
 
+.game-root--debug {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(420px, 1fr) minmax(260px, 320px);
+  grid-template-areas: "left stage right";
+  gap: 12px;
+  padding: 12px;
+  align-items: center;
+}
+
+.game-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-area: stage;
+  height: 100%;
+  min-height: 0;
+}
+
 #game-canvas {
   display: block;
   background: #0b0b14;
@@ -52,10 +71,19 @@ body {
 }
 
 .tail-viewer {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  width: 320px;
+  display: contents;
+}
+
+.tail-viewer.hidden {
+  display: contents;
+}
+
+.tail-viewer.hidden .tail-viewer__panel {
+  display: none;
+}
+
+.tail-viewer__panel {
+  align-self: stretch;
   background: rgba(10, 10, 18, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
@@ -66,10 +94,16 @@ body {
   flex-direction: column;
   gap: 10px;
   backdrop-filter: blur(8px);
+  max-height: calc(100vh - 24px);
+  overflow: auto;
 }
 
-.tail-viewer.hidden {
-  display: none;
+.tail-viewer__panel--left {
+  grid-area: left;
+}
+
+.tail-viewer__panel--right {
+  grid-area: right;
 }
 
 .tail-viewer__header {
@@ -114,12 +148,6 @@ body {
   font-size: 10px;
   padding: 2px 6px;
   cursor: pointer;
-}
-
-.tail-viewer__body {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
 }
 
 .tail-viewer__section {
@@ -198,6 +226,48 @@ body {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.tail-viewer__field {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(70px, 120px);
+  align-items: center;
+  gap: 8px;
+}
+
+.tail-viewer__field--wide {
+  grid-template-columns: minmax(90px, 1fr) minmax(150px, 1fr);
+}
+
+.tail-viewer__field input[type="number"],
+.tail-viewer__field input[type="text"],
+.tail-viewer__field select {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 11px;
+  padding: 4px 6px;
+}
+
+.tail-viewer__field input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  justify-self: start;
+}
+
+.tail-viewer__color-row {
+  grid-template-columns: minmax(90px, 1fr) 60px minmax(90px, 1fr);
+}
+
+.tail-viewer__color-row input[type="color"] {
+  width: 100%;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0;
+  background: transparent;
+}
+
 .tail-viewer__stage-list {
   display: flex;
   flex-direction: column;
@@ -231,89 +301,6 @@ body {
   cursor: pointer;
 }
 
-.tail-viewer__layers {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.tail-viewer__layers [data-layer-list] {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.tail-viewer__layer-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tail-viewer__layer-toggle {
-  accent-color: #7c4dff;
-}
-
-.tail-viewer__layer-button {
-  flex: 1;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.06);
-  color: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.tail-viewer__layer-button.is-active {
-  border-color: rgba(124, 77, 255, 0.6);
-  background: rgba(124, 77, 255, 0.2);
-}
-
-.tail-viewer__controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.tail-viewer__field {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 6px;
-}
-
-.tail-viewer__field input[type="text"],
-.tail-viewer__field select {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 11px;
-}
-
-.tail-viewer__color-row {
-  grid-template-columns: 1fr auto auto;
-}
-
-.tail-viewer__color-row input[type="color"] {
-  border: none;
-  background: transparent;
-  width: 28px;
-  height: 24px;
-  padding: 0;
-}
-
 .tail-viewer__field label {
   color: rgba(255, 255, 255, 0.7);
-}
-
-.tail-viewer__field input[type=\"range\"] {
-  width: 100%;
-}
-
-.tail-viewer__field span {
-  font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.9);
 }

@@ -5,6 +5,7 @@
   - respawn-on-ground with fades,
   - optional platform descent,
   - bidirectional camera tracking.
+- Split the Tail Viewer into left/right editor panels with compact number inputs, a layer dropdown, and platform generator controls, plus a dedicated `debug.html` entrypoint.
 - Clamped camera scrolling to keep the ground anchored at the bottom edge.
 - Swapped the tail to a comet-like particle trail and refactored particles into dedicated system/effect modules.
 - Implemented Tail v2 layered tail with grid snapping, palette-aware colors, and a live tail viewer for tuning.
