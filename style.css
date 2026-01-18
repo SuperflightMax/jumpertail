@@ -288,6 +288,26 @@ body {
   grid-template-columns: minmax(90px, 1fr) minmax(150px, 1fr);
 }
 
+.tail-viewer__range-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tail-viewer__range-control input[type="range"] {
+  width: 100%;
+}
+
+.tail-viewer__range-control span {
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tail-viewer__file-input {
+  display: none;
+}
+
 .tail-viewer__field input[type="number"],
 .tail-viewer__field input[type="text"],
 .tail-viewer__field select {

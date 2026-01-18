@@ -10,6 +10,17 @@ function deepClone(value) {
   return value;
 }
 
+function replaceConfig(target, source) {
+  if (!source || typeof source !== "object") return target;
+  Object.keys(target).forEach((key) => {
+    delete target[key];
+  });
+  Object.keys(source).forEach((key) => {
+    target[key] = deepClone(source[key]);
+  });
+  return target;
+}
+
 function mergeInto(target, source) {
   if (!source || typeof source !== "object") return target;
   Object.keys(source).forEach((key) => {
@@ -38,13 +49,15 @@ async function fetchJson(path) {
   return response.json();
 }
 
-export async function applyConfigOverrides(baseConfig, configFiles) {
+export async function applyConfigOverrides(baseConfig, configFiles, options = {}) {
   const defaultPath = configFiles?.defaultPath;
   const available = configFiles?.available ?? [];
   const storageKey = configFiles?.storageKey ?? "selectedConfigPath";
+  const mode = options.mode ?? "merge";
+  const allowSelection = options.allowSelection ?? false;
   let selectedPath = null;
 
-  if (typeof localStorage !== "undefined") {
+  if (allowSelection && typeof localStorage !== "undefined") {
     const stored = localStorage.getItem(storageKey);
     if (stored && available.includes(stored)) {
       selectedPath = stored;
@@ -57,7 +70,11 @@ export async function applyConfigOverrides(baseConfig, configFiles) {
   if (selectedPath) {
     try {
       const overrides = await fetchJson(selectedPath);
-      mergeInto(baseConfig, overrides);
+      if (mode === "replace") {
+        replaceConfig(baseConfig, overrides);
+      } else {
+        mergeInto(baseConfig, overrides);
+      }
     } catch (error) {
       console.warn(error.message);
     }

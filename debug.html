@@ -200,7 +200,6 @@
               <button type="button" data-action="save">Save</button>
               <button type="button" data-action="load">Load</button>
               <button type="button" data-action="reset">Reset</button>
-              <button type="button" data-action="dump">Dump JSON</button>
             </div>
           </div>
           <div class="tail-viewer__section">
@@ -234,6 +233,24 @@
           </div>
           <div class="tail-viewer__section">
             <div class="tail-viewer__section-header">
+              <span>Progression</span>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--wide">
+              <label>Intensity</label>
+              <div class="tail-viewer__range-control">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  data-control="progressValue"
+                />
+                <span data-control="progressValueLabel">0.00</span>
+              </div>
+            </div>
+          </div>
+          <div class="tail-viewer__section">
+            <div class="tail-viewer__section-header">
               <span>Pixel Overlay</span>
             </div>
             <div class="tail-viewer__field">
@@ -251,19 +268,6 @@
             <div class="tail-viewer__field tail-viewer__field--stack">
               <label>Pattern</label>
               <textarea data-control="pixelOverlayPattern"></textarea>
-            </div>
-          </div>
-          <div class="tail-viewer__section">
-            <div class="tail-viewer__section-header">
-              <span>Config Files</span>
-            </div>
-            <div class="tail-viewer__field">
-              <label>Active Config</label>
-              <select data-control="configSelect"></select>
-            </div>
-            <div class="tail-viewer__field">
-              <label>Reload</label>
-              <button type="button" data-action="configReload">Reload</button>
             </div>
           </div>
           <div class="tail-viewer__section">
