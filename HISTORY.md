@@ -1,5 +1,6 @@
 # HISTORY
 
+- Updated config loading to auto-apply `configs/default.json` (player uses external-only when present) and switched Tail Viewer Save/Load/Reset to file download/upload with a progression slider, removing config file selection and Dump JSON.
 - Reordered the debug layout into Game → Layers → Rest columns, moved the performance monitor onto the canvas, and added platform color pickers.
 - Updated platform lifecycle and camera behavior for a more playable climb flow:
   - consistent ground/platform spacing,
