@@ -215,10 +215,14 @@ export class LayeredParticleTail {
           Math.abs(legacyVy?.max ?? 0)
         )
       : 0;
-    const angle = angleBetween(speed.angle?.min ?? -180, speed.angle?.max ?? 180);
+    const speedAngle = angleBetween(
+  speed.angle?.min ?? -180,
+  speed.angle?.max ?? 180
+);
     const magnitude = randomRange(speed.magnitude, legacyMagnitude);
-    const vx = -player.vx * followStrength + Math.cos(angle) * magnitude;
-    const vy = -player.vy * followStrength + Math.sin(angle) * magnitude;
+    const vx = -player.vx * followStrength + Math.cos(speedAngle) * magnitude;
+const vy = -player.vy * followStrength + Math.sin(speedAngle) * magnitude;
+
 
     const life = randomRange(layer.life, 0.5) * lifeMul;
     const scaleFrom = randomRange(layer.scaleFrom, 2) * sizeMul;
