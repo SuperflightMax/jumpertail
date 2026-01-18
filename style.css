@@ -266,6 +266,16 @@ body {
   gap: 8px;
 }
 
+.tail-viewer__field--range {
+  grid-template-columns: minmax(90px, 1fr) minmax(140px, 1fr);
+}
+
+.tail-viewer__range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .tail-viewer__field--stack {
   grid-template-columns: 1fr;
 }
@@ -307,12 +317,6 @@ body {
   font-size: 11px;
   padding: 6px 8px;
   font-family: "Inter", system-ui, sans-serif;
-}
-
-.tail-viewer__speed-mode {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .tail-viewer__color-row {

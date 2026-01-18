@@ -55,6 +55,7 @@ export class ParticleSystem {
       life: 0,
       maxLife: 0,
       age: 0,
+      size: 1,
       scaleFrom: 1,
       scaleTo: 1,
       alphaFrom: 1,
@@ -88,6 +89,7 @@ export class ParticleSystem {
     particle.life = config.life;
     particle.maxLife = config.life;
     particle.age = 0;
+    particle.size = config.size ?? 1;
     particle.scaleFrom = config.scaleFrom ?? 1;
     particle.scaleTo = config.scaleTo ?? particle.scaleFrom ?? 1;
     particle.alphaFrom = config.alphaFrom ?? 1;
@@ -113,8 +115,7 @@ export class ParticleSystem {
   update(dt) {
     this.particles.forEach((particle, index) => {
       if (!particle.alive) return;
-      const drag = clamp(particle.airDrag ?? 0, 0, 1);
-      const dragMultiplier = 1 - drag * dt;
+      const dragMultiplier = 1 - (particle.airDrag ?? 0);
       particle.vx *= dragMultiplier;
       particle.vy *= dragMultiplier;
       particle.vx += particle.ax * dt;
@@ -159,17 +160,20 @@ export class ParticleSystem {
       if (rotation) {
         ctx.rotate(rotation);
       }
+      const size = particle.size * scale;
       if (texture) {
-        const size = scale;
         ctx.drawImage(texture, -size / 2, -size / 2, size, size);
+        ctx.globalCompositeOperation = "source-atop";
+        ctx.fillStyle = color;
+        ctx.fillRect(-size / 2, -size / 2, size, size);
       } else if (particle.shape === "circle") {
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(0, 0, scale * 0.5, 0, Math.PI * 2);
+        ctx.arc(0, 0, size * 0.5, 0, Math.PI * 2);
         ctx.fill();
       } else {
         ctx.fillStyle = color;
-        ctx.fillRect(-scale / 2, -scale / 2, scale, scale);
+        ctx.fillRect(-size / 2, -size / 2, size, size);
       }
       ctx.restore();
     });

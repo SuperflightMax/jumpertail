@@ -681,8 +681,59 @@ function initTailViewer(config, tailEmitter) {
   );
   const platformFadeInput = panel.querySelector("[data-control=\"platformFadeDuration\"]");
   const platformDescentInput = panel.querySelector("[data-control=\"platformDescentSpeed\"]");
+  const platformBurstCountInput = panel.querySelector("[data-control=\"platformBurstCount\"]");
+  const platformSizeInput = panel.querySelector("[data-control=\"platformSize\"]");
+  const platformLifeMinInput = panel.querySelector("[data-control=\"platformLifeMin\"]");
+  const platformLifeMaxInput = panel.querySelector("[data-control=\"platformLifeMax\"]");
+  const platformScaleFromMinInput = panel.querySelector("[data-control=\"platformScaleFromMin\"]");
+  const platformScaleFromMaxInput = panel.querySelector("[data-control=\"platformScaleFromMax\"]");
+  const platformScaleToMinInput = panel.querySelector("[data-control=\"platformScaleToMin\"]");
+  const platformScaleToMaxInput = panel.querySelector("[data-control=\"platformScaleToMax\"]");
+  const platformAlphaFromMinInput = panel.querySelector("[data-control=\"platformAlphaFromMin\"]");
+  const platformAlphaFromMaxInput = panel.querySelector("[data-control=\"platformAlphaFromMax\"]");
+  const platformAlphaToMinInput = panel.querySelector("[data-control=\"platformAlphaToMin\"]");
+  const platformAlphaToMaxInput = panel.querySelector("[data-control=\"platformAlphaToMax\"]");
+  const platformRotationFromMinInput = panel.querySelector(
+    "[data-control=\"platformRotationFromMin\"]"
+  );
+  const platformRotationFromMaxInput = panel.querySelector(
+    "[data-control=\"platformRotationFromMax\"]"
+  );
+  const platformRotationToMinInput = panel.querySelector(
+    "[data-control=\"platformRotationToMin\"]"
+  );
+  const platformRotationToMaxInput = panel.querySelector(
+    "[data-control=\"platformRotationToMax\"]"
+  );
+  const platformAngularSpeedMinInput = panel.querySelector(
+    "[data-control=\"platformAngularSpeedMin\"]"
+  );
+  const platformAngularSpeedMaxInput = panel.querySelector(
+    "[data-control=\"platformAngularSpeedMax\"]"
+  );
+  const platformSpeedAngleStartInput = panel.querySelector(
+    "[data-control=\"platformSpeedAngleStart\"]"
+  );
+  const platformSpeedAngleEndInput = panel.querySelector(
+    "[data-control=\"platformSpeedAngleEnd\"]"
+  );
+  const platformSpeedMinInput = panel.querySelector("[data-control=\"platformSpeedMin\"]");
+  const platformSpeedMaxInput = panel.querySelector("[data-control=\"platformSpeedMax\"]");
+  const platformGravityXInput = panel.querySelector("[data-control=\"platformGravityX\"]");
+  const platformGravityYInput = panel.querySelector("[data-control=\"platformGravityY\"]");
+  const platformAirDragInput = panel.querySelector("[data-control=\"platformAirDrag\"]");
+  const platformShapeSelect = panel.querySelector("[data-control=\"platformShape\"]");
+  const platformTextureSelect = panel.querySelector("[data-control=\"platformTexture\"]");
+  const platformUseColorToggle = panel.querySelector("[data-control=\"platformUseColor\"]");
+  const platformColorFromInput = panel.querySelector("[data-control=\"platformColorFrom\"]");
+  const platformColorFromTextInput = panel.querySelector(
+    "[data-control=\"platformColorFromText\"]"
+  );
+  const platformColorToInput = panel.querySelector("[data-control=\"platformColorTo\"]");
+  const platformColorToTextInput = panel.querySelector("[data-control=\"platformColorToText\"]");
   const spawnInput = panel.querySelector("[data-control=\"spawnRate\"]");
   const maxSpawnInput = panel.querySelector("[data-control=\"maxSpawnRate\"]");
+  const sizeInput = panel.querySelector("[data-control=\"size\"]");
   const lifeMinInput = panel.querySelector("[data-control=\"lifeMin\"]");
   const lifeMaxInput = panel.querySelector("[data-control=\"lifeMax\"]");
   const scaleFromMinInput = panel.querySelector("[data-control=\"scaleFromMin\"]");
@@ -697,6 +748,7 @@ function initTailViewer(config, tailEmitter) {
   const rotationFromMaxInput = panel.querySelector("[data-control=\"rotationFromMax\"]");
   const rotationToMinInput = panel.querySelector("[data-control=\"rotationToMin\"]");
   const rotationToMaxInput = panel.querySelector("[data-control=\"rotationToMax\"]");
+  const rotationToRow = panel.querySelector("[data-rotation-to-row]");
   const angularSpeedMinInput = panel.querySelector("[data-control=\"angularSpeedMin\"]");
   const angularSpeedMaxInput = panel.querySelector("[data-control=\"angularSpeedMax\"]");
   const enabledInput = panel.querySelector("[data-control=\"layerEnabled\"]");
@@ -711,11 +763,6 @@ function initTailViewer(config, tailEmitter) {
   const colorToTextInput = panel.querySelector("[data-control=\"colorToText\"]");
   const paletteInput = panel.querySelector("[data-control=\"palette\"]");
   const paletteBlendInput = panel.querySelector("[data-control=\"paletteBlend\"]");
-  const speedModeSelect = panel.querySelector("[data-control=\"speedMode\"]");
-  const speedVxMinInput = panel.querySelector("[data-control=\"speedVxMin\"]");
-  const speedVxMaxInput = panel.querySelector("[data-control=\"speedVxMax\"]");
-  const speedVyMinInput = panel.querySelector("[data-control=\"speedVyMin\"]");
-  const speedVyMaxInput = panel.querySelector("[data-control=\"speedVyMax\"]");
   const speedAngleStartInput = panel.querySelector("[data-control=\"speedAngleStart\"]");
   const speedAngleEndInput = panel.querySelector("[data-control=\"speedAngleEnd\"]");
   const speedMinInput = panel.querySelector("[data-control=\"speedMin\"]");
@@ -728,7 +775,6 @@ function initTailViewer(config, tailEmitter) {
   const airDragInput = panel.querySelector("[data-control=\"airDrag\"]");
   const fixedColorRows = panel.querySelectorAll("[data-color-fixed]");
   const paletteRows = panel.querySelectorAll("[data-color-palette]");
-  const speedModeSections = panel.querySelectorAll("[data-speed-mode]");
   const performanceMonitor = document.querySelector("[data-performance-monitor]");
   const metrics = {
     fps: performanceMonitor?.querySelector("[data-metric=\"fps\"]"),
@@ -747,6 +793,7 @@ function initTailViewer(config, tailEmitter) {
     !platformColorsWrap ||
     !spawnInput ||
     !maxSpawnInput ||
+    !sizeInput ||
     !lifeMinInput ||
     !lifeMaxInput ||
     !scaleFromMinInput ||
@@ -761,6 +808,7 @@ function initTailViewer(config, tailEmitter) {
     !rotationFromMaxInput ||
     !rotationToMinInput ||
     !rotationToMaxInput ||
+    !rotationToRow ||
     !angularSpeedMinInput ||
     !angularSpeedMaxInput ||
     !enabledInput ||
@@ -775,11 +823,6 @@ function initTailViewer(config, tailEmitter) {
     !colorToTextInput ||
     !paletteInput ||
     !paletteBlendInput ||
-    !speedModeSelect ||
-    !speedVxMinInput ||
-    !speedVxMaxInput ||
-    !speedVyMinInput ||
-    !speedVyMaxInput ||
     !speedAngleStartInput ||
     !speedAngleEndInput ||
     !speedMinInput ||
@@ -792,7 +835,6 @@ function initTailViewer(config, tailEmitter) {
     !airDragInput ||
     fixedColorRows.length === 0 ||
     paletteRows.length === 0 ||
-    speedModeSections.length === 0 ||
     !metrics.fps ||
     !metrics.particles ||
     !platformWidthInput ||
@@ -805,6 +847,38 @@ function initTailViewer(config, tailEmitter) {
     !platformRespawnInput ||
     !platformFadeInput ||
     !platformDescentInput ||
+    !platformBurstCountInput ||
+    !platformSizeInput ||
+    !platformLifeMinInput ||
+    !platformLifeMaxInput ||
+    !platformScaleFromMinInput ||
+    !platformScaleFromMaxInput ||
+    !platformScaleToMinInput ||
+    !platformScaleToMaxInput ||
+    !platformAlphaFromMinInput ||
+    !platformAlphaFromMaxInput ||
+    !platformAlphaToMinInput ||
+    !platformAlphaToMaxInput ||
+    !platformRotationFromMinInput ||
+    !platformRotationFromMaxInput ||
+    !platformRotationToMinInput ||
+    !platformRotationToMaxInput ||
+    !platformAngularSpeedMinInput ||
+    !platformAngularSpeedMaxInput ||
+    !platformSpeedAngleStartInput ||
+    !platformSpeedAngleEndInput ||
+    !platformSpeedMinInput ||
+    !platformSpeedMaxInput ||
+    !platformGravityXInput ||
+    !platformGravityYInput ||
+    !platformAirDragInput ||
+    !platformShapeSelect ||
+    !platformTextureSelect ||
+    !platformUseColorToggle ||
+    !platformColorFromInput ||
+    !platformColorFromTextInput ||
+    !platformColorToInput ||
+    !platformColorToTextInput ||
     !pixelOverlayEnabledInput ||
     !pixelOverlayGridInput ||
     !pixelOverlayPresetSelect ||
@@ -815,12 +889,20 @@ function initTailViewer(config, tailEmitter) {
     return null;
   }
 
+  function clampIndex(index, length) {
+    if (length === 0) return 0;
+    return Math.max(0, Math.min(length - 1, index));
+  }
+
+  let activeIndex = clampIndex(
+    viewerConfig.defaultLayerIndex ?? 0,
+    tailConfig.layers.length
+  );
+
   const defaultTailConfig = JSON.parse(JSON.stringify(tailConfig));
   const viewerState = {
     locked: panel.classList.contains("hidden") ? false : true,
     lockedProgress: tailEmitter?.getIntensity?.() ?? 0,
-    speedModes: {},
-    speedAngles: {},
   };
 
   function applyTailConfig(nextConfig) {
@@ -830,6 +912,7 @@ function initTailViewer(config, tailEmitter) {
     });
     Object.assign(tailConfig, nextConfig);
     tailConfig.viewer = viewer;
+    activeIndex = clampIndex(activeIndex, tailConfig.layers.length);
     if (tailEmitter) {
       tailEmitter.layerStates = tailConfig.layers.map(() => ({ spawnAccumulator: 0 }));
     }
@@ -844,16 +927,6 @@ function initTailViewer(config, tailEmitter) {
     } catch (error) {
       console.warn("Tail viewer config load failed.", error);
     }
-  }
-
-  let activeIndex = clampIndex(
-    viewerConfig.defaultLayerIndex ?? 0,
-    tailConfig.layers.length
-  );
-
-  function clampIndex(index, length) {
-    if (length === 0) return 0;
-    return Math.max(0, Math.min(length - 1, index));
   }
 
   function clampNumber(value, min, max) {
@@ -892,82 +965,6 @@ function initTailViewer(config, tailEmitter) {
     setNumberInput(maxInput, { ...options, value: range.max });
   }
 
-  function getSpeedMode(layerIndex) {
-    return viewerState.speedModes[layerIndex] ?? "vector";
-  }
-
-  function setSpeedMode(layerIndex, mode) {
-    viewerState.speedModes[layerIndex] = mode;
-  }
-
-  function normalizeAngle(radians) {
-    const twoPi = Math.PI * 2;
-    return ((radians % twoPi) + twoPi) % twoPi;
-  }
-
-  function angleInRange(angle, start, end) {
-    if (start <= end) {
-      return angle >= start && angle <= end;
-    }
-    return angle >= start || angle <= end;
-  }
-
-  function trigBounds(start, end, fn, criticals) {
-    const points = [start, end, ...criticals];
-    const values = points
-      .filter((point) => angleInRange(point, start, end))
-      .map((point) => fn(point));
-    if (values.length === 0) {
-      values.push(fn(start), fn(end));
-    }
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  }
-
-  function applyDirectionalSpeed(layer) {
-    const angles = viewerState.speedAngles[activeIndex] ?? {
-      start: -30,
-      end: 30,
-      min: 0,
-      max: 0,
-    };
-    const startRad = normalizeAngle((angles.start * Math.PI) / 180);
-    const endRad = normalizeAngle((angles.end * Math.PI) / 180);
-    const speedMin = Math.max(0, angles.min);
-    const speedMax = Math.max(speedMin, angles.max);
-
-    const cosBounds = trigBounds(startRad, endRad, Math.cos, [0, Math.PI]);
-    const sinBounds = trigBounds(startRad, endRad, Math.sin, [Math.PI / 2, (3 * Math.PI) / 2]);
-
-    const vxCandidates = [
-      cosBounds.min * speedMin,
-      cosBounds.min * speedMax,
-      cosBounds.max * speedMin,
-      cosBounds.max * speedMax,
-    ];
-    const vyCandidates = [
-      sinBounds.min * speedMin,
-      sinBounds.min * speedMax,
-      sinBounds.max * speedMin,
-      sinBounds.max * speedMax,
-    ];
-
-    layer.speed = {
-      vx: { min: Math.min(...vxCandidates), max: Math.max(...vxCandidates) },
-      vy: { min: Math.min(...vyCandidates), max: Math.max(...vyCandidates) },
-    };
-  }
-
-  function refreshSpeedMode() {
-    const mode = getSpeedMode(activeIndex);
-    speedModeSelect.value = mode;
-    speedModeSections.forEach((section) => {
-      section.style.display = section.dataset.speedMode === mode ? "flex" : "none";
-    });
-  }
-
   function setLockedProgress(progress) {
     const clamped = Math.max(0, Math.min(1, progress));
     viewerState.lockedProgress = clamped;
@@ -986,12 +983,26 @@ function initTailViewer(config, tailEmitter) {
 
     const lifeRange = ensureRange(layer.life, 0.1, 1);
     const scaleFromRange = ensureRange(layer.scaleFrom, 1, 1);
-    const scaleToRange = ensureRange(layer.scaleTo ?? layer.scaleFrom, scaleFromRange.min, scaleFromRange.max);
+    const scaleToRange = ensureRange(
+      layer.scaleTo ?? layer.scaleFrom,
+      scaleFromRange.min,
+      scaleFromRange.max
+    );
     const alphaFromRange = ensureRange(layer.alphaFrom, 0, 1);
-    const alphaToRange = ensureRange(layer.alphaTo ?? layer.alphaFrom, alphaFromRange.min, alphaFromRange.max);
+    const alphaToRange = ensureRange(
+      layer.alphaTo ?? layer.alphaFrom,
+      alphaFromRange.min,
+      alphaFromRange.max
+    );
     const rotationFromRange = ensureRange(layer.rotationFrom, 0, 0);
-    const rotationToRange = ensureRange(layer.rotationTo ?? layer.rotationFrom, rotationFromRange.min, rotationFromRange.max);
+    const rotationToRange = ensureRange(
+      layer.rotationTo ?? layer.rotationFrom,
+      rotationFromRange.min,
+      rotationFromRange.max
+    );
     const angularSpeedRange = ensureRange(layer.angularSpeed, 0, 0);
+    const speedAngleRange = ensureRange(layer.speed?.angle, -180, 180);
+    const speedRange = ensureRange(layer.speed?.magnitude, 0, 0);
 
     setNumberInput(spawnInput, {
       min: 0,
@@ -1007,9 +1018,10 @@ function initTailViewer(config, tailEmitter) {
       value: layer.maxSpawnRate ?? 0,
     });
 
+    setNumberInput(sizeInput, { min: 0.1, step: 0.1, value: layer.size ?? 2 });
     setRangeInputs(lifeRange, lifeMinInput, lifeMaxInput, { min: 0.1, max: 5, step: 0.05 });
-    setRangeInputs(scaleFromRange, scaleFromMinInput, scaleFromMaxInput, { min: 0.1, max: 20, step: 0.1 });
-    setRangeInputs(scaleToRange, scaleToMinInput, scaleToMaxInput, { min: 0.1, max: 20, step: 0.1 });
+    setRangeInputs(scaleFromRange, scaleFromMinInput, scaleFromMaxInput, { min: 0.1, step: 0.1 });
+    setRangeInputs(scaleToRange, scaleToMinInput, scaleToMaxInput, { min: 0.1, step: 0.1 });
     setRangeInputs(alphaFromRange, alphaFromMinInput, alphaFromMaxInput, { min: 0, max: 1, step: 0.01 });
     setRangeInputs(alphaToRange, alphaToMinInput, alphaToMaxInput, { min: 0, max: 1, step: 0.01 });
     setRangeInputs(rotationFromRange, rotationFromMinInput, rotationFromMaxInput, { min: -360, max: 360, step: 1 });
@@ -1042,26 +1054,8 @@ function initTailViewer(config, tailEmitter) {
       value: layer.paletteBlend ?? 0,
     });
 
-    const speedRange = layer.speed ?? { vx: { min: 0, max: 0 }, vy: { min: 0, max: 0 } };
-    const vxRange = ensureRange(speedRange.vx, 0, 0);
-    const vyRange = ensureRange(speedRange.vy, 0, 0);
-    setRangeInputs(vxRange, speedVxMinInput, speedVxMaxInput, { min: -500, max: 500, step: 1 });
-    setRangeInputs(vyRange, speedVyMinInput, speedVyMaxInput, { min: -500, max: 500, step: 1 });
-
-    if (!viewerState.speedAngles[activeIndex]) {
-      viewerState.speedAngles[activeIndex] = {
-        start: -30,
-        end: 30,
-        min: 0,
-        max: Math.max(Math.abs(vxRange.min), Math.abs(vxRange.max), Math.abs(vyRange.min), Math.abs(vyRange.max)),
-      };
-    }
-
-    const speedAngles = viewerState.speedAngles[activeIndex];
-    setNumberInput(speedAngleStartInput, { min: -180, max: 180, step: 1, value: speedAngles.start });
-    setNumberInput(speedAngleEndInput, { min: -180, max: 180, step: 1, value: speedAngles.end });
-    setNumberInput(speedMinInput, { min: 0, max: 500, step: 1, value: speedAngles.min });
-    setNumberInput(speedMaxInput, { min: 0, max: 500, step: 1, value: speedAngles.max });
+    setRangeInputs(speedAngleRange, speedAngleStartInput, speedAngleEndInput, { min: -180, max: 180, step: 1 });
+    setRangeInputs(speedRange, speedMinInput, speedMaxInput, { min: 0, step: 1 });
 
     setNumberInput(followStrengthInput, {
       min: 0,
@@ -1083,7 +1077,7 @@ function initTailViewer(config, tailEmitter) {
     });
     setNumberInput(gravityXInput, { min: -200, max: 200, step: 1, value: layer.gravity?.x ?? 0 });
     setNumberInput(gravityYInput, { min: -200, max: 200, step: 1, value: layer.gravity?.y ?? 0 });
-    setNumberInput(airDragInput, { min: 0, max: 1, step: 0.01, value: layer.airDrag ?? 0 });
+    setNumberInput(airDragInput, { min: 0, max: 10, step: 0.05, value: layer.airDrag ?? 0 });
 
     snapToggle.checked = Boolean(tailConfig.snapToGrid);
     setNumberInput(gridInput, { min: 1, max: 8, step: 1, value: tailConfig.gridSize ?? 1 });
@@ -1158,8 +1152,9 @@ function initTailViewer(config, tailEmitter) {
     });
     renderPlatformColors();
     updateColorControls();
-    refreshSpeedMode();
     updateTextureOptions();
+    updateRotationToState();
+    refreshPlatformConfig();
 
     pixelOverlayEnabledInput.checked = Boolean(config.pixelOverlay.enabled);
     setNumberInput(pixelOverlayGridInput, { min: 1, max: 10, step: 1, value: config.pixelOverlay.gridSize });
@@ -1178,6 +1173,16 @@ function initTailViewer(config, tailEmitter) {
     paletteRows.forEach((row) => {
       row.style.display = mode === "palette" ? "grid" : "none";
     });
+  }
+
+  function updateRotationToState() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer || !rotationToRow) return;
+    const angularSpeedRange = ensureRange(layer.angularSpeed, 0, 0);
+    const disable = Math.abs(angularSpeedRange.min) > 0 || Math.abs(angularSpeedRange.max) > 0;
+    rotationToMinInput.disabled = disable;
+    rotationToMaxInput.disabled = disable;
+    rotationToRow.style.opacity = disable ? "0.5" : "1";
   }
 
   function renderPlatformColors() {
@@ -1207,6 +1212,131 @@ function initTailViewer(config, tailEmitter) {
       row.appendChild(textInput);
       platformColorsWrap.appendChild(row);
     });
+  }
+
+  function updatePlatformColorState() {
+    const usePlatformColor = platformUseColorToggle.checked;
+    platformColorFromInput.disabled = usePlatformColor;
+    platformColorFromTextInput.disabled = usePlatformColor;
+    platformColorToInput.disabled = usePlatformColor;
+    platformColorToTextInput.disabled = usePlatformColor;
+    platformUseColorToggle.checked = usePlatformColor;
+  }
+
+  function updatePlatformRotationToState() {
+    const platformConfig = config.particles.platform;
+    const angularSpeedRange = ensureRange(platformConfig.angularSpeed, 0, 0);
+    const disable =
+      Math.abs(angularSpeedRange.min) > 0 || Math.abs(angularSpeedRange.max) > 0;
+    platformRotationToMinInput.disabled = disable;
+    platformRotationToMaxInput.disabled = disable;
+    const row = panel.querySelector("[data-platform-rotation-to-row]");
+    if (row) {
+      row.style.opacity = disable ? "0.5" : "1";
+    }
+  }
+
+  function refreshPlatformConfig() {
+    const platformConfig = config.particles.platform;
+    const lifeRange = ensureRange(platformConfig.life, 0.1, 1);
+    const scaleFromRange = ensureRange(platformConfig.scaleFrom, 1, 1);
+    const scaleToRange = ensureRange(
+      platformConfig.scaleTo ?? platformConfig.scaleFrom,
+      scaleFromRange.min,
+      scaleFromRange.max
+    );
+    const alphaFromRange = ensureRange(platformConfig.alphaFrom, 0, 1);
+    const alphaToRange = ensureRange(
+      platformConfig.alphaTo ?? platformConfig.alphaFrom,
+      alphaFromRange.min,
+      alphaFromRange.max
+    );
+    const rotationFromRange = ensureRange(platformConfig.rotationFrom, 0, 0);
+    const rotationToRange = ensureRange(
+      platformConfig.rotationTo ?? platformConfig.rotationFrom,
+      rotationFromRange.min,
+      rotationFromRange.max
+    );
+    const angularSpeedRange = ensureRange(platformConfig.angularSpeed, 0, 0);
+    const speedAngleRange = ensureRange(platformConfig.speed?.angle, -180, 180);
+    const speedRange = ensureRange(platformConfig.speed?.magnitude, 0, 0);
+
+    setNumberInput(platformBurstCountInput, {
+      min: 0,
+      step: 1,
+      value: platformConfig.burstCount ?? 0,
+    });
+    setNumberInput(platformSizeInput, { min: 0.1, step: 0.1, value: platformConfig.size ?? 2 });
+    setRangeInputs(lifeRange, platformLifeMinInput, platformLifeMaxInput, {
+      min: 0.1,
+      step: 0.05,
+    });
+    setRangeInputs(scaleFromRange, platformScaleFromMinInput, platformScaleFromMaxInput, {
+      min: 0.1,
+      step: 0.1,
+    });
+    setRangeInputs(scaleToRange, platformScaleToMinInput, platformScaleToMaxInput, {
+      min: 0.1,
+      step: 0.1,
+    });
+    setRangeInputs(alphaFromRange, platformAlphaFromMinInput, platformAlphaFromMaxInput, {
+      min: 0,
+      max: 1,
+      step: 0.01,
+    });
+    setRangeInputs(alphaToRange, platformAlphaToMinInput, platformAlphaToMaxInput, {
+      min: 0,
+      max: 1,
+      step: 0.01,
+    });
+    setRangeInputs(rotationFromRange, platformRotationFromMinInput, platformRotationFromMaxInput, {
+      min: -360,
+      max: 360,
+      step: 1,
+    });
+    setRangeInputs(rotationToRange, platformRotationToMinInput, platformRotationToMaxInput, {
+      min: -360,
+      max: 360,
+      step: 1,
+    });
+    setRangeInputs(angularSpeedRange, platformAngularSpeedMinInput, platformAngularSpeedMaxInput, {
+      min: -720,
+      max: 720,
+      step: 1,
+    });
+    setRangeInputs(speedAngleRange, platformSpeedAngleStartInput, platformSpeedAngleEndInput, {
+      min: -180,
+      max: 180,
+      step: 1,
+    });
+    setRangeInputs(speedRange, platformSpeedMinInput, platformSpeedMaxInput, { min: 0, step: 1 });
+    setNumberInput(platformGravityXInput, {
+      min: -2000,
+      max: 2000,
+      step: 1,
+      value: platformConfig.gravity?.x ?? 0,
+    });
+    setNumberInput(platformGravityYInput, {
+      min: -2000,
+      max: 2000,
+      step: 1,
+      value: platformConfig.gravity?.y ?? 0,
+    });
+    setNumberInput(platformAirDragInput, {
+      min: 0,
+      max: 10,
+      step: 0.05,
+      value: platformConfig.airDrag ?? 0,
+    });
+    platformShapeSelect.value = platformConfig.shape ?? "square";
+    platformUseColorToggle.checked = platformConfig.colorFrom == null && platformConfig.colorTo == null;
+    const fallbackColor = config.platforms.colors[0] ?? "#ffffff";
+    platformColorFromInput.value = platformConfig.colorFrom ?? fallbackColor;
+    platformColorFromTextInput.value = platformColorFromInput.value;
+    platformColorToInput.value = platformConfig.colorTo ?? fallbackColor;
+    platformColorToTextInput.value = platformColorToInput.value;
+    updatePlatformColorState();
+    updatePlatformRotationToState();
   }
 
   function refreshLayerList() {
@@ -1257,6 +1387,12 @@ function initTailViewer(config, tailEmitter) {
     layer.maxSpawnRate = Number(maxSpawnInput.value);
   }
 
+  function handleSizeInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    layer.size = Number(sizeInput.value);
+  }
+
   function handleLifeRangeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
@@ -1302,6 +1438,7 @@ function initTailViewer(config, tailEmitter) {
   function handleRotationToRangeInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
+    if (rotationToMinInput.disabled || rotationToMaxInput.disabled) return;
     layer.rotationTo = ensureRange(layer.rotationTo, 0, 0);
     updateRangeFromInputs(layer.rotationTo, rotationToMinInput, rotationToMaxInput);
   }
@@ -1311,6 +1448,7 @@ function initTailViewer(config, tailEmitter) {
     if (!layer) return;
     layer.angularSpeed = ensureRange(layer.angularSpeed, 0, 0);
     updateRangeFromInputs(layer.angularSpeed, angularSpeedMinInput, angularSpeedMaxInput);
+    updateRotationToState();
   }
 
   function handleEnabledInput() {
@@ -1401,38 +1539,26 @@ function initTailViewer(config, tailEmitter) {
     layer.paletteBlend = Number(paletteBlendInput.value);
   }
 
-  function handleSpeedModeSelect() {
-    const layer = tailConfig.layers[activeIndex];
-    if (!layer) return;
-    setSpeedMode(activeIndex, speedModeSelect.value);
-    if (speedModeSelect.value === "direction") {
-      applyDirectionalSpeed(layer);
-    }
-    refreshSpeedMode();
-  }
-
-  function handleSpeedVectorInput() {
-    const layer = tailConfig.layers[activeIndex];
-    if (!layer) return;
+  function ensureLayerSpeed(layer) {
     if (!layer.speed) {
-      layer.speed = { vx: { min: 0, max: 0 }, vy: { min: 0, max: 0 } };
+      layer.speed = { angle: { min: -180, max: 180 }, magnitude: { min: 0, max: 0 } };
     }
-    layer.speed.vx = ensureRange(layer.speed.vx, 0, 0);
-    layer.speed.vy = ensureRange(layer.speed.vy, 0, 0);
-    updateRangeFromInputs(layer.speed.vx, speedVxMinInput, speedVxMaxInput);
-    updateRangeFromInputs(layer.speed.vy, speedVyMinInput, speedVyMaxInput);
   }
 
-  function handleSpeedDirectionInput() {
+  function handleSpeedAngleInput() {
     const layer = tailConfig.layers[activeIndex];
     if (!layer) return;
-    viewerState.speedAngles[activeIndex] = {
-      start: Number(speedAngleStartInput.value),
-      end: Number(speedAngleEndInput.value),
-      min: Number(speedMinInput.value),
-      max: Number(speedMaxInput.value),
-    };
-    applyDirectionalSpeed(layer);
+    ensureLayerSpeed(layer);
+    layer.speed.angle = ensureRange(layer.speed.angle, -180, 180);
+    updateRangeFromInputs(layer.speed.angle, speedAngleStartInput, speedAngleEndInput);
+  }
+
+  function handleSpeedMagnitudeInput() {
+    const layer = tailConfig.layers[activeIndex];
+    if (!layer) return;
+    ensureLayerSpeed(layer);
+    layer.speed.magnitude = ensureRange(layer.speed.magnitude, 0, 0);
+    updateRangeFromInputs(layer.speed.magnitude, speedMinInput, speedMaxInput);
   }
 
   function handleFollowStrengthInput() {
@@ -1570,6 +1696,163 @@ function initTailViewer(config, tailEmitter) {
     config.platforms.descentSpeed = value;
   }
 
+  function handlePlatformBurstCountInput() {
+    const value = Number(platformBurstCountInput.value);
+    if (!Number.isFinite(value)) return;
+    config.particles.platform.burstCount = Math.max(0, Math.floor(value));
+    platformBurstCountInput.value = String(config.particles.platform.burstCount);
+  }
+
+  function handlePlatformSizeInput() {
+    const value = Number(platformSizeInput.value);
+    if (!Number.isFinite(value)) return;
+    config.particles.platform.size = value;
+  }
+
+  function handlePlatformLifeRangeInput() {
+    const configEntry = config.particles.platform;
+    configEntry.life = ensureRange(configEntry.life, 0.1, 1);
+    updateRangeFromInputs(configEntry.life, platformLifeMinInput, platformLifeMaxInput);
+  }
+
+  function handlePlatformScaleFromRangeInput() {
+    const configEntry = config.particles.platform;
+    configEntry.scaleFrom = ensureRange(configEntry.scaleFrom, 1, 1);
+    updateRangeFromInputs(configEntry.scaleFrom, platformScaleFromMinInput, platformScaleFromMaxInput);
+  }
+
+  function handlePlatformScaleToRangeInput() {
+    const configEntry = config.particles.platform;
+    configEntry.scaleTo = ensureRange(configEntry.scaleTo, 1, 1);
+    updateRangeFromInputs(configEntry.scaleTo, platformScaleToMinInput, platformScaleToMaxInput);
+  }
+
+  function handlePlatformAlphaFromRangeInput() {
+    const configEntry = config.particles.platform;
+    configEntry.alphaFrom = ensureRange(configEntry.alphaFrom, 1, 1);
+    updateRangeFromInputs(configEntry.alphaFrom, platformAlphaFromMinInput, platformAlphaFromMaxInput);
+  }
+
+  function handlePlatformAlphaToRangeInput() {
+    const configEntry = config.particles.platform;
+    configEntry.alphaTo = ensureRange(configEntry.alphaTo, 1, 1);
+    updateRangeFromInputs(configEntry.alphaTo, platformAlphaToMinInput, platformAlphaToMaxInput);
+  }
+
+  function handlePlatformRotationFromRangeInput() {
+    const configEntry = config.particles.platform;
+    configEntry.rotationFrom = ensureRange(configEntry.rotationFrom, 0, 0);
+    updateRangeFromInputs(
+      configEntry.rotationFrom,
+      platformRotationFromMinInput,
+      platformRotationFromMaxInput
+    );
+  }
+
+  function handlePlatformRotationToRangeInput() {
+    const configEntry = config.particles.platform;
+    if (platformRotationToMinInput.disabled || platformRotationToMaxInput.disabled) return;
+    configEntry.rotationTo = ensureRange(configEntry.rotationTo, 0, 0);
+    updateRangeFromInputs(
+      configEntry.rotationTo,
+      platformRotationToMinInput,
+      platformRotationToMaxInput
+    );
+  }
+
+  function handlePlatformAngularSpeedRangeInput() {
+    const configEntry = config.particles.platform;
+    configEntry.angularSpeed = ensureRange(configEntry.angularSpeed, 0, 0);
+    updateRangeFromInputs(
+      configEntry.angularSpeed,
+      platformAngularSpeedMinInput,
+      platformAngularSpeedMaxInput
+    );
+    updatePlatformRotationToState();
+  }
+
+  function handlePlatformSpeedAngleInput() {
+    const configEntry = config.particles.platform;
+    if (!configEntry.speed) {
+      configEntry.speed = { angle: { min: -180, max: 180 }, magnitude: { min: 0, max: 0 } };
+    }
+    configEntry.speed.angle = ensureRange(configEntry.speed.angle, -180, 180);
+    updateRangeFromInputs(
+      configEntry.speed.angle,
+      platformSpeedAngleStartInput,
+      platformSpeedAngleEndInput
+    );
+  }
+
+  function handlePlatformSpeedMagnitudeInput() {
+    const configEntry = config.particles.platform;
+    if (!configEntry.speed) {
+      configEntry.speed = { angle: { min: -180, max: 180 }, magnitude: { min: 0, max: 0 } };
+    }
+    configEntry.speed.magnitude = ensureRange(configEntry.speed.magnitude, 0, 0);
+    updateRangeFromInputs(
+      configEntry.speed.magnitude,
+      platformSpeedMinInput,
+      platformSpeedMaxInput
+    );
+  }
+
+  function handlePlatformGravityInput() {
+    config.particles.platform.gravity = {
+      x: Number(platformGravityXInput.value),
+      y: Number(platformGravityYInput.value),
+    };
+  }
+
+  function handlePlatformAirDragInput() {
+    config.particles.platform.airDrag = Number(platformAirDragInput.value);
+  }
+
+  function handlePlatformShapeInput() {
+    config.particles.platform.shape = platformShapeSelect.value;
+  }
+
+  function handlePlatformTextureInput() {
+    const value = platformTextureSelect.value;
+    config.particles.platform.texture = value === "none" ? null : value;
+  }
+
+  function handlePlatformUseColorToggle() {
+    const usePlatform = platformUseColorToggle.checked;
+    if (usePlatform) {
+      config.particles.platform.colorFrom = null;
+      config.particles.platform.colorTo = null;
+    } else {
+      config.particles.platform.colorFrom = platformColorFromInput.value;
+      config.particles.platform.colorTo = platformColorToInput.value;
+    }
+    updatePlatformColorState();
+  }
+
+  function handlePlatformColorFromInput() {
+    config.particles.platform.colorFrom = platformColorFromInput.value;
+    platformColorFromTextInput.value = platformColorFromInput.value;
+  }
+
+  function handlePlatformColorFromTextInput() {
+    config.particles.platform.colorFrom = platformColorFromTextInput.value;
+    if (platformColorFromTextInput.value.startsWith("#")) {
+      platformColorFromInput.value = platformColorFromTextInput.value;
+    }
+  }
+
+  function handlePlatformColorToInput() {
+    config.particles.platform.colorTo = platformColorToInput.value;
+    platformColorToTextInput.value = platformColorToInput.value;
+  }
+
+  function handlePlatformColorToTextInput() {
+    config.particles.platform.colorTo = platformColorToTextInput.value;
+    if (platformColorToTextInput.value.startsWith("#")) {
+      platformColorToInput.value = platformColorToTextInput.value;
+    }
+  }
+
   function handlePixelOverlayEnabledInput() {
     config.pixelOverlay.enabled = pixelOverlayEnabledInput.checked;
     updatePixelCanvas();
@@ -1643,6 +1926,20 @@ function initTailViewer(config, tailEmitter) {
       textureSelect.appendChild(option);
     });
     textureSelect.value = layerHasTexture() ? tailConfig.layers[activeIndex].texture : "none";
+
+    platformTextureSelect.innerHTML = "";
+    const platformNone = document.createElement("option");
+    platformNone.value = "none";
+    platformNone.textContent = "none";
+    platformTextureSelect.appendChild(platformNone);
+    textures.forEach((name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      platformTextureSelect.appendChild(option);
+    });
+    const platformTexture = config.particles.platform.texture;
+    platformTextureSelect.value = platformTexture ? platformTexture : "none";
   }
 
   function layerHasTexture() {
@@ -1684,6 +1981,7 @@ function initTailViewer(config, tailEmitter) {
 
   bindNumberInput(spawnInput, handleSpawnRateInput);
   bindNumberInput(maxSpawnInput, handleMaxSpawnRateInput);
+  bindNumberInput(sizeInput, handleSizeInput);
   bindNumberInput(lifeMinInput, handleLifeRangeInput);
   bindNumberInput(lifeMaxInput, handleLifeRangeInput);
   bindNumberInput(scaleFromMinInput, handleScaleFromRangeInput);
@@ -1712,15 +2010,10 @@ function initTailViewer(config, tailEmitter) {
   colorToTextInput.addEventListener("change", handleColorToTextInput);
   paletteInput.addEventListener("change", handlePaletteInput);
   bindNumberInput(paletteBlendInput, handlePaletteBlendInput);
-  speedModeSelect.addEventListener("change", handleSpeedModeSelect);
-  bindNumberInput(speedVxMinInput, handleSpeedVectorInput);
-  bindNumberInput(speedVxMaxInput, handleSpeedVectorInput);
-  bindNumberInput(speedVyMinInput, handleSpeedVectorInput);
-  bindNumberInput(speedVyMaxInput, handleSpeedVectorInput);
-  bindNumberInput(speedAngleStartInput, handleSpeedDirectionInput);
-  bindNumberInput(speedAngleEndInput, handleSpeedDirectionInput);
-  bindNumberInput(speedMinInput, handleSpeedDirectionInput);
-  bindNumberInput(speedMaxInput, handleSpeedDirectionInput);
+  bindNumberInput(speedAngleStartInput, handleSpeedAngleInput);
+  bindNumberInput(speedAngleEndInput, handleSpeedAngleInput);
+  bindNumberInput(speedMinInput, handleSpeedMagnitudeInput);
+  bindNumberInput(speedMaxInput, handleSpeedMagnitudeInput);
   bindNumberInput(followStrengthInput, handleFollowStrengthInput);
   bindNumberInput(offsetRadiusInput, handleOffsetRadiusInput);
   bindNumberInput(offsetBiasInput, handleOffsetBiasInput);
@@ -1743,6 +2036,38 @@ function initTailViewer(config, tailEmitter) {
   platformRespawnInput.addEventListener("change", handlePlatformRespawnInput);
   bindNumberInput(platformFadeInput, handlePlatformFadeInput);
   bindNumberInput(platformDescentInput, handlePlatformDescentInput);
+  bindNumberInput(platformBurstCountInput, handlePlatformBurstCountInput);
+  bindNumberInput(platformSizeInput, handlePlatformSizeInput);
+  bindNumberInput(platformLifeMinInput, handlePlatformLifeRangeInput);
+  bindNumberInput(platformLifeMaxInput, handlePlatformLifeRangeInput);
+  bindNumberInput(platformScaleFromMinInput, handlePlatformScaleFromRangeInput);
+  bindNumberInput(platformScaleFromMaxInput, handlePlatformScaleFromRangeInput);
+  bindNumberInput(platformScaleToMinInput, handlePlatformScaleToRangeInput);
+  bindNumberInput(platformScaleToMaxInput, handlePlatformScaleToRangeInput);
+  bindNumberInput(platformAlphaFromMinInput, handlePlatformAlphaFromRangeInput);
+  bindNumberInput(platformAlphaFromMaxInput, handlePlatformAlphaFromRangeInput);
+  bindNumberInput(platformAlphaToMinInput, handlePlatformAlphaToRangeInput);
+  bindNumberInput(platformAlphaToMaxInput, handlePlatformAlphaToRangeInput);
+  bindNumberInput(platformRotationFromMinInput, handlePlatformRotationFromRangeInput);
+  bindNumberInput(platformRotationFromMaxInput, handlePlatformRotationFromRangeInput);
+  bindNumberInput(platformRotationToMinInput, handlePlatformRotationToRangeInput);
+  bindNumberInput(platformRotationToMaxInput, handlePlatformRotationToRangeInput);
+  bindNumberInput(platformAngularSpeedMinInput, handlePlatformAngularSpeedRangeInput);
+  bindNumberInput(platformAngularSpeedMaxInput, handlePlatformAngularSpeedRangeInput);
+  bindNumberInput(platformSpeedAngleStartInput, handlePlatformSpeedAngleInput);
+  bindNumberInput(platformSpeedAngleEndInput, handlePlatformSpeedAngleInput);
+  bindNumberInput(platformSpeedMinInput, handlePlatformSpeedMagnitudeInput);
+  bindNumberInput(platformSpeedMaxInput, handlePlatformSpeedMagnitudeInput);
+  bindNumberInput(platformGravityXInput, handlePlatformGravityInput);
+  bindNumberInput(platformGravityYInput, handlePlatformGravityInput);
+  bindNumberInput(platformAirDragInput, handlePlatformAirDragInput);
+  platformShapeSelect.addEventListener("change", handlePlatformShapeInput);
+  platformTextureSelect.addEventListener("change", handlePlatformTextureInput);
+  platformUseColorToggle.addEventListener("change", handlePlatformUseColorToggle);
+  platformColorFromInput.addEventListener("input", handlePlatformColorFromInput);
+  platformColorFromTextInput.addEventListener("change", handlePlatformColorFromTextInput);
+  platformColorToInput.addEventListener("input", handlePlatformColorToInput);
+  platformColorToTextInput.addEventListener("change", handlePlatformColorToTextInput);
   pixelOverlayEnabledInput.addEventListener("change", handlePixelOverlayEnabledInput);
   bindNumberInput(pixelOverlayGridInput, handlePixelOverlayGridInput);
   pixelOverlayPresetSelect.addEventListener("change", handlePixelOverlayPresetSelect);

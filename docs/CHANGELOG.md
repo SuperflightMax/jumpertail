@@ -6,6 +6,9 @@ Codex обязан заполнять его по этапам.
 
 ## Journal — Single runnable build (S1–S8 vertical slice)
 
+- Switched particle speeds to angle/magnitude ranges, added base size + scale multipliers, and tinted textures with color transitions.
+- Added platform explosion controls to the viewer, including speed/rotation ranges, shape/texture, and color overrides.
+- Updated air drag to apply per-step velocity reduction (`v *= 1 - airDrag`) and disabled rotation-to when angular speed is active.
 - Fixed AssetManager audio preload to ignore non-array config keys (prevents startup exception).
 - Reworked particle configs to use min/max ranges, vector speeds, and full transitions (color/alpha/scale/rotation) with texture selection and air drag.
 - Added AssetManager with preload/lazy options, plus external JSON config overrides and selectable config files.

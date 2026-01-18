@@ -65,6 +65,13 @@ function randomRange(range, fallback = 0) {
   return min + Math.random() * (max - min);
 }
 
+function angleBetween(min, max) {
+  const start = toRadians(min);
+  const end = toRadians(max);
+  const delta = ((end - start) % TAU + TAU) % TAU;
+  return start + Math.random() * (delta || TAU);
+}
+
 export class LayeredParticleTail {
   constructor(system, config) {
     this.system = system;
@@ -198,8 +205,20 @@ export class LayeredParticleTail {
       layer.followStrength ?? (layer.mode === "follow" ? 1 : 0);
 
     const speed = layer.speed ?? {};
-    const vx = -player.vx * followStrength + randomRange(speed.vx, 0);
-    const vy = -player.vy * followStrength + randomRange(speed.vy, 0);
+    const legacyVx = speed.vx;
+    const legacyVy = speed.vy;
+    const legacyMagnitude = legacyVx || legacyVy
+      ? Math.max(
+          Math.abs(legacyVx?.min ?? 0),
+          Math.abs(legacyVx?.max ?? 0),
+          Math.abs(legacyVy?.min ?? 0),
+          Math.abs(legacyVy?.max ?? 0)
+        )
+      : 0;
+    const angle = angleBetween(speed.angle?.min ?? -180, speed.angle?.max ?? 180);
+    const magnitude = randomRange(speed.magnitude, legacyMagnitude);
+    const vx = -player.vx * followStrength + Math.cos(angle) * magnitude;
+    const vy = -player.vy * followStrength + Math.sin(angle) * magnitude;
 
     const life = randomRange(layer.life, 0.5) * lifeMul;
     const scaleFrom = randomRange(layer.scaleFrom, 2) * sizeMul;
@@ -207,8 +226,11 @@ export class LayeredParticleTail {
     const alphaFrom = randomRange(layer.alphaFrom, 1) * globalAlpha;
     const alphaTo = randomRange(layer.alphaTo ?? layer.alphaFrom, alphaFrom) * globalAlpha;
     const rotationFrom = toRadians(randomRange(layer.rotationFrom, 0));
-    const rotationTo = toRadians(randomRange(layer.rotationTo ?? layer.rotationFrom, 0));
     const angularSpeed = toRadians(randomRange(layer.angularSpeed, 0));
+    const rotationTo =
+      Math.abs(angularSpeed) > 0.0001
+        ? rotationFrom
+        : toRadians(randomRange(layer.rotationTo ?? layer.rotationFrom, 0));
 
     let x = player.x + offsetX;
     let y = player.y + offsetY;
@@ -226,8 +248,9 @@ export class LayeredParticleTail {
       vy,
       ax: layer.gravity?.x ?? 0,
       ay: layer.gravity?.y ?? 0,
-      airDrag: clamp(layer.airDrag ?? 0, 0, 1),
+      airDrag: layer.airDrag ?? 0,
       life: Math.max(0.1, life),
+      size: Math.max(0.1, layer.size ?? 2),
       scaleFrom: Math.max(0.1, scaleFrom),
       scaleTo: Math.max(0.1, scaleTo),
       alphaFrom: clamp(alphaFrom, 0, 1),

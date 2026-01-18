@@ -91,109 +91,76 @@
               <input type="number" data-control="maxSpawnRate" />
             </div>
             <div class="tail-viewer__field">
-              <label>Life Min</label>
-              <input type="number" data-control="lifeMin" />
+              <label>Base Size</label>
+              <input type="number" data-control="size" />
             </div>
-            <div class="tail-viewer__field">
-              <label>Life Max</label>
-              <input type="number" data-control="lifeMax" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Scale From Min</label>
-              <input type="number" data-control="scaleFromMin" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Scale From Max</label>
-              <input type="number" data-control="scaleFromMax" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Scale To Min</label>
-              <input type="number" data-control="scaleToMin" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Scale To Max</label>
-              <input type="number" data-control="scaleToMax" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Alpha From Min</label>
-              <input type="number" data-control="alphaFromMin" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Alpha From Max</label>
-              <input type="number" data-control="alphaFromMax" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Alpha To Min</label>
-              <input type="number" data-control="alphaToMin" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Alpha To Max</label>
-              <input type="number" data-control="alphaToMax" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Rotation From Min</label>
-              <input type="number" data-control="rotationFromMin" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Rotation From Max</label>
-              <input type="number" data-control="rotationFromMax" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Rotation To Min</label>
-              <input type="number" data-control="rotationToMin" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Rotation To Max</label>
-              <input type="number" data-control="rotationToMax" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Angular Speed Min</label>
-              <input type="number" data-control="angularSpeedMin" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Angular Speed Max</label>
-              <input type="number" data-control="angularSpeedMax" />
-            </div>
-            <div class="tail-viewer__field">
-              <label>Speed Mode</label>
-              <select data-control="speedMode">
-                <option value="vector">Vx/Vy</option>
-                <option value="direction">Direction/Speed</option>
-              </select>
-            </div>
-            <div class="tail-viewer__speed-mode" data-speed-mode="vector">
-              <div class="tail-viewer__field">
-                <label>Vx Min</label>
-                <input type="number" data-control="speedVxMin" />
-              </div>
-              <div class="tail-viewer__field">
-                <label>Vx Max</label>
-                <input type="number" data-control="speedVxMax" />
-              </div>
-              <div class="tail-viewer__field">
-                <label>Vy Min</label>
-                <input type="number" data-control="speedVyMin" />
-              </div>
-              <div class="tail-viewer__field">
-                <label>Vy Max</label>
-                <input type="number" data-control="speedVyMax" />
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Life</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="lifeMin" />
+                <input type="number" data-control="lifeMax" />
               </div>
             </div>
-            <div class="tail-viewer__speed-mode" data-speed-mode="direction">
-              <div class="tail-viewer__field">
-                <label>Angle Start</label>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Scale From</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="scaleFromMin" />
+                <input type="number" data-control="scaleFromMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Scale To</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="scaleToMin" />
+                <input type="number" data-control="scaleToMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Alpha From</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="alphaFromMin" />
+                <input type="number" data-control="alphaFromMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Alpha To</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="alphaToMin" />
+                <input type="number" data-control="alphaToMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Rotation From</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="rotationFromMin" />
+                <input type="number" data-control="rotationFromMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range" data-rotation-to-row>
+              <label>Rotation To</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="rotationToMin" />
+                <input type="number" data-control="rotationToMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Angular Speed</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="angularSpeedMin" />
+                <input type="number" data-control="angularSpeedMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Speed Angle</label>
+              <div class="tail-viewer__range">
                 <input type="number" data-control="speedAngleStart" />
-              </div>
-              <div class="tail-viewer__field">
-                <label>Angle End</label>
                 <input type="number" data-control="speedAngleEnd" />
               </div>
-              <div class="tail-viewer__field">
-                <label>Speed Min</label>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Speed</label>
+              <div class="tail-viewer__range">
                 <input type="number" data-control="speedMin" />
-              </div>
-              <div class="tail-viewer__field">
-                <label>Speed Max</label>
                 <input type="number" data-control="speedMax" />
               </div>
             </div>
@@ -346,6 +313,126 @@
             <div class="tail-viewer__field tail-viewer__field--stack">
               <label>Colors</label>
               <div class="tail-viewer__platform-colors" data-control="platformColors"></div>
+            </div>
+          </div>
+          <div class="tail-viewer__section">
+            <div class="tail-viewer__section-header">
+              <span>Platform Explosion</span>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Burst Count</label>
+              <input type="number" data-control="platformBurstCount" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Shape</label>
+              <select data-control="platformShape">
+                <option value="square">square</option>
+                <option value="circle">circle</option>
+              </select>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Texture</label>
+              <select data-control="platformTexture"></select>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Use Platform Color</label>
+              <input type="checkbox" data-control="platformUseColor" />
+            </div>
+            <div class="tail-viewer__field tail-viewer__color-row" data-platform-color-row>
+              <label>Color From</label>
+              <input type="color" data-control="platformColorFrom" />
+              <input type="text" data-control="platformColorFromText" />
+            </div>
+            <div class="tail-viewer__field tail-viewer__color-row" data-platform-color-row>
+              <label>Color To</label>
+              <input type="color" data-control="platformColorTo" />
+              <input type="text" data-control="platformColorToText" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Base Size</label>
+              <input type="number" data-control="platformSize" />
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Life</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformLifeMin" />
+                <input type="number" data-control="platformLifeMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Scale From</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformScaleFromMin" />
+                <input type="number" data-control="platformScaleFromMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Scale To</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformScaleToMin" />
+                <input type="number" data-control="platformScaleToMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Alpha From</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformAlphaFromMin" />
+                <input type="number" data-control="platformAlphaFromMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Alpha To</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformAlphaToMin" />
+                <input type="number" data-control="platformAlphaToMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Rotation From</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformRotationFromMin" />
+                <input type="number" data-control="platformRotationFromMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range" data-platform-rotation-to-row>
+              <label>Rotation To</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformRotationToMin" />
+                <input type="number" data-control="platformRotationToMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Angular Speed</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformAngularSpeedMin" />
+                <input type="number" data-control="platformAngularSpeedMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Speed Angle</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformSpeedAngleStart" />
+                <input type="number" data-control="platformSpeedAngleEnd" />
+              </div>
+            </div>
+            <div class="tail-viewer__field tail-viewer__field--range">
+              <label>Speed</label>
+              <div class="tail-viewer__range">
+                <input type="number" data-control="platformSpeedMin" />
+                <input type="number" data-control="platformSpeedMax" />
+              </div>
+            </div>
+            <div class="tail-viewer__field">
+              <label>Gravity X</label>
+              <input type="number" data-control="platformGravityX" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Gravity Y</label>
+              <input type="number" data-control="platformGravityY" />
+            </div>
+            <div class="tail-viewer__field">
+              <label>Air Drag</label>
+              <input type="number" data-control="platformAirDrag" />
             </div>
           </div>
         </aside>
