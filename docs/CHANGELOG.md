@@ -6,6 +6,7 @@ Codex обязан заполнять его по этапам.
 
 ## Journal — Single runnable build (S1–S8 vertical slice)
 
+- Added Windows batch scripts (`runw.bat`, `runwd.bat`) to start a local server and open the game or debug viewer.
 - Switched particle speeds to angle/magnitude ranges, added base size + scale multipliers, and tinted textures with color transitions.
 - Added platform explosion controls to the viewer, including speed/rotation ranges, shape/texture, and color overrides.
 - Updated air drag to apply per-step velocity reduction (`v *= 1 - airDrag`) and disabled rotation-to when angular speed is active.
