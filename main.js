@@ -45,6 +45,78 @@ const state = {
   },
 };
 
+function deepCloneConfig(value) {
+  if (Array.isArray(value)) return value.map((item) => deepCloneConfig(item));
+  if (value && typeof value === "object") {
+    const cloned = {};
+    Object.keys(value).forEach((key) => {
+      cloned[key] = deepCloneConfig(value[key]);
+    });
+    return cloned;
+  }
+  return value;
+}
+
+function replaceConfigContents(target, source) {
+  if (!source || typeof source !== "object") return target;
+  Object.keys(target).forEach((key) => {
+    delete target[key];
+  });
+  Object.keys(source).forEach((key) => {
+    target[key] = deepCloneConfig(source[key]);
+  });
+  return target;
+}
+
+function formatLocalDateTime(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+  return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+}
+
+function getConfigSnapshot() {
+  return deepCloneConfig(CONFIG);
+}
+
+function downloadConfig(config, filename) {
+  const payload = JSON.stringify(config, null, 2);
+  const blob = new Blob([payload], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function applyConfigFromObject(nextConfig) {
+  if (!nextConfig || typeof nextConfig !== "object" || Array.isArray(nextConfig)) {
+    return false;
+  }
+  replaceConfigContents(CONFIG, nextConfig);
+  state.tailColor = CONFIG.platforms?.colors?.[0] ?? "#ffffff";
+  if (state.tailEmitter) {
+    state.tailEmitter.config = CONFIG.particles?.tail ?? {};
+    state.tailEmitter.layerStates = (state.tailEmitter.config.layers || []).map(
+      () => ({ spawnAccumulator: 0 })
+    );
+  }
+  if (state.audio) {
+    state.audio = new SoundSystem(CONFIG.audio, state.assetManager);
+  }
+  resize();
+  resetGame();
+  state.tailViewer?.refresh?.();
+  return true;
+}
+
 class SoundSystem {
   constructor(config, assetManager) {
     this.enabled = config.enabled;
@@ -645,13 +717,13 @@ function initTailViewer(config, tailEmitter) {
   const panel = document.getElementById("tail-viewer");
   if (!panel) return null;
 
-  const storageKey = viewerConfig.storageKey ?? "tailViewerConfig";
   const layerButtons = panel.querySelector("[data-layer-buttons]");
   const controls = panel.querySelector("[data-layer-controls]");
   const saveButton = panel.querySelector("[data-action=\"save\"]");
   const loadButton = panel.querySelector("[data-action=\"load\"]");
   const resetButton = panel.querySelector("[data-action=\"reset\"]");
-  const dumpButton = panel.querySelector("[data-action=\"dump\"]");
+  const progressInput = panel.querySelector("[data-control=\"progressValue\"]");
+  const progressValue = panel.querySelector("[data-control=\"progressValueLabel\"]");
   const snapToggle = panel.querySelector("[data-control=\"snapToGrid\"]");
   const gridInput = panel.querySelector("[data-control=\"gridSize\"]");
   const globalAlphaInput = panel.querySelector("[data-control=\"globalAlpha\"]");
@@ -662,8 +734,6 @@ function initTailViewer(config, tailEmitter) {
   const pixelOverlayGridInput = panel.querySelector("[data-control=\"pixelOverlayGrid\"]");
   const pixelOverlayPresetSelect = panel.querySelector("[data-control=\"pixelOverlayPreset\"]");
   const pixelOverlayPatternInput = panel.querySelector("[data-control=\"pixelOverlayPattern\"]");
-  const configSelect = panel.querySelector("[data-control=\"configSelect\"]");
-  const configReload = panel.querySelector("[data-action=\"configReload\"]");
   const platformColorsWrap = panel.querySelector("[data-control=\"platformColors\"]");
   const platformWidthInput = panel.querySelector("[data-control=\"platformWidth\"]");
   const platformHeightInput = panel.querySelector("[data-control=\"platformHeight\"]");
@@ -790,6 +860,8 @@ function initTailViewer(config, tailEmitter) {
     !globalSpawnInput ||
     !globalLifeInput ||
     !globalSizeInput ||
+    !progressInput ||
+    !progressValue ||
     !platformColorsWrap ||
     !spawnInput ||
     !maxSpawnInput ||
@@ -882,9 +954,7 @@ function initTailViewer(config, tailEmitter) {
     !pixelOverlayEnabledInput ||
     !pixelOverlayGridInput ||
     !pixelOverlayPresetSelect ||
-    !pixelOverlayPatternInput ||
-    !configSelect ||
-    !configReload
+    !pixelOverlayPatternInput
   ) {
     return null;
   }
@@ -899,7 +969,6 @@ function initTailViewer(config, tailEmitter) {
     tailConfig.layers.length
   );
 
-  const defaultTailConfig = JSON.parse(JSON.stringify(tailConfig));
   const viewerState = {
     locked: panel.classList.contains("hidden") ? false : true,
     lockedProgress: tailEmitter?.getIntensity?.() ?? 0,
@@ -918,15 +987,6 @@ function initTailViewer(config, tailEmitter) {
     }
     refreshLayerList();
     refreshControls();
-  }
-
-  const saved = localStorage.getItem(storageKey);
-  if (saved) {
-    try {
-      applyTailConfig(JSON.parse(saved));
-    } catch (error) {
-      console.warn("Tail viewer config load failed.", error);
-    }
   }
 
   function clampNumber(value, min, max) {
@@ -971,6 +1031,14 @@ function initTailViewer(config, tailEmitter) {
     if (viewerState.locked) {
       tailEmitter.setIntensity(clamped);
     }
+    progressInput.value = String(clamped);
+    progressValue.textContent = clamped.toFixed(2);
+  }
+
+  function handleProgressInput() {
+    const value = Number(progressInput.value);
+    if (!Number.isFinite(value)) return;
+    setLockedProgress(value);
   }
 
   if (performanceMonitor) {
@@ -1161,7 +1229,6 @@ function initTailViewer(config, tailEmitter) {
     updatePixelOverlayPresets();
     pixelOverlayPatternInput.value = config.pixelOverlay.pattern ?? "";
 
-    updateConfigSelect();
     setLockedProgress(viewerState.lockedProgress);
   }
 
@@ -1897,21 +1964,6 @@ function initTailViewer(config, tailEmitter) {
     pixelOverlayPresetSelect.value = "custom";
   }
 
-  function updateConfigSelect() {
-    const available = config.configFiles?.available ?? [];
-    const selectedPath = state.configInfo?.selectedPath ?? config.configFiles?.defaultPath;
-    configSelect.innerHTML = "";
-    available.forEach((path) => {
-      const option = document.createElement("option");
-      option.value = path;
-      option.textContent = path;
-      if (path === selectedPath) {
-        option.selected = true;
-      }
-      configSelect.appendChild(option);
-    });
-  }
-
   function updateTextureOptions() {
     const textures = state.assetManager?.getAvailableParticleTextures?.() ?? [];
     textureSelect.innerHTML = "";
@@ -2073,37 +2125,65 @@ function initTailViewer(config, tailEmitter) {
   pixelOverlayPresetSelect.addEventListener("change", handlePixelOverlayPresetSelect);
   pixelOverlayPatternInput.addEventListener("input", handlePixelOverlayPatternInput);
 
-  configSelect.addEventListener("change", () => {
-    const selected = configSelect.value;
-    if (!selected) return;
-    localStorage.setItem(config.configFiles.storageKey ?? "selectedConfigPath", selected);
-    window.location.reload();
-  });
+  progressInput.addEventListener("input", handleProgressInput);
 
-  configReload.addEventListener("click", () => {
-    window.location.reload();
-  });
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "application/json,.json";
+  fileInput.className = "tail-viewer__file-input";
+  panel.appendChild(fileInput);
+
+  function handleFileLoad() {
+    const [file] = fileInput.files || [];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = typeof reader.result === "string" ? reader.result : "";
+        const parsed = JSON.parse(text);
+        if (!applyConfigFromObject(parsed)) {
+          console.warn("Tail viewer config load failed.");
+        }
+      } catch (error) {
+        console.warn("Tail viewer config load failed.", error);
+      }
+    };
+    reader.onerror = () => {
+      console.warn("Tail viewer config load failed.");
+    };
+    reader.readAsText(file);
+    fileInput.value = "";
+  }
+
+  fileInput.addEventListener("change", handleFileLoad);
 
   saveButton?.addEventListener("click", () => {
-    localStorage.setItem(storageKey, JSON.stringify(tailConfig));
+    const snapshot = getConfigSnapshot();
+    const filename = `default_${formatLocalDateTime()}.json`;
+    downloadConfig(snapshot, filename);
   });
 
   loadButton?.addEventListener("click", () => {
-    const stored = localStorage.getItem(storageKey);
-    if (!stored) return;
+    fileInput.click();
+  });
+
+  resetButton?.addEventListener("click", async () => {
+    const snapshot = getConfigSnapshot();
+    const filename = `default_${formatLocalDateTime()}.json`;
+    downloadConfig(snapshot, filename);
+    const defaultPath = config.configFiles?.defaultPath ?? "configs/default.json";
     try {
-      applyTailConfig(JSON.parse(stored));
+      const response = await fetch(defaultPath, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Config load failed (${response.status}): ${defaultPath}`);
+      }
+      const parsed = await response.json();
+      if (!applyConfigFromObject(parsed)) {
+        console.warn("Tail viewer config reset failed.");
+      }
     } catch (error) {
-      console.warn("Tail viewer config load failed.", error);
+      console.warn("Tail viewer config reset failed.", error);
     }
-  });
-
-  resetButton?.addEventListener("click", () => {
-    applyTailConfig(JSON.parse(JSON.stringify(defaultTailConfig)));
-  });
-
-  dumpButton?.addEventListener("click", () => {
-    console.log("Tail config:", JSON.stringify(tailConfig, null, 2));
   });
 
   function togglePanel() {
@@ -2129,7 +2209,16 @@ function initTailViewer(config, tailEmitter) {
 
   refreshLayerList();
   refreshControls();
-  return { panel, tailEmitter, state: viewerState, metrics };
+  return {
+    panel,
+    tailEmitter,
+    state: viewerState,
+    metrics,
+    refresh: () => {
+      refreshLayerList();
+      refreshControls();
+    },
+  };
 }
 
 function initRenderSurfaces() {
@@ -2172,7 +2261,12 @@ function init() {
 }
 
 async function boot() {
-  state.configInfo = await applyConfigOverrides(CONFIG, CONFIG.configFiles);
+  const isDebug = Boolean(document.getElementById("tail-viewer"));
+  const mode = isDebug ? "merge" : "replace";
+  state.configInfo = await applyConfigOverrides(CONFIG, CONFIG.configFiles, {
+    mode,
+    allowSelection: false,
+  });
   state.assetManager = new AssetManager({ ...CONFIG.assets, audio: CONFIG.audio });
   if (CONFIG.assets.preload) {
     await state.assetManager.preloadAll();
