@@ -1,5 +1,6 @@
 # HISTORY
 
+- Added Windows batch scripts to launch the local server and open the game or debug viewer.
 - Reordered the debug layout into Game → Layers → Rest columns, moved the performance monitor onto the canvas, and added platform color pickers.
 - Updated platform lifecycle and camera behavior for a more playable climb flow:
   - consistent ground/platform spacing,
